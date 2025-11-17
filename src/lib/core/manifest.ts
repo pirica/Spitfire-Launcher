@@ -31,31 +31,35 @@ export default class Manifest {
 
     for (const dirEntry of manifestFiles) {
       if (dirEntry.name.endsWith('.item')) {
-        const fileContent = await readTextFile(await path.join(manifestsDirectory, dirEntry.name));
-        const file = JSON.parse(fileContent) as {
-          AppVersionString: string;
-          CatalogNamespace: string;
-          LaunchCommand: string;
-          DisplayName: string;
-          InstallLocation: string;
-          LaunchExecutable: string;
-          CatalogItemId: string;
-        };
-
-        if (file.DisplayName.toLowerCase() === 'fortnite') {
-          const appVersionString = file.AppVersionString?.trim();
-
-          parsedManifest = {
-            appVersionString: appVersionString ?? '',
-            namespace: file.CatalogNamespace,
-            launchCommand: file.LaunchCommand?.trim() ?? '',
-            userAgent: appVersionString ? `Fortnite/${appVersionString}` : '',
-            installLocation: file.InstallLocation,
-            launchExecutable: file.LaunchExecutable,
-            executableLocation: file.LaunchExecutable
+        try {
+          const fileContent = await readTextFile(await path.join(manifestsDirectory, dirEntry.name));
+          const file = JSON.parse(fileContent) as {
+            AppVersionString: string;
+            CatalogNamespace: string;
+            LaunchCommand: string;
+            DisplayName: string;
+            InstallLocation: string;
+            LaunchExecutable: string;
+            CatalogItemId: string;
           };
 
-          break;
+          if (file.DisplayName.toLowerCase() === 'fortnite') {
+            const appVersionString = file.AppVersionString?.trim();
+
+            parsedManifest = {
+              appVersionString: appVersionString ?? '',
+              namespace: file.CatalogNamespace,
+              launchCommand: file.LaunchCommand?.trim() ?? '',
+              userAgent: appVersionString ? `Fortnite/${appVersionString}` : '',
+              installLocation: file.InstallLocation,
+              launchExecutable: file.LaunchExecutable,
+              executableLocation: file.LaunchExecutable
+            };
+
+            break;
+          }
+        } catch (error) {
+          console.warn(error);
         }
       }
     }
