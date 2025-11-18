@@ -1,62 +1,62 @@
-import Authentication from '$lib/core/authentication';
 import { accountsStorage } from '$lib/core/data-storage';
 import { accessTokenCache } from '$lib/stores';
-import ky from 'ky';
+import ky, { isHTTPError } from 'ky';
 import { fetch } from '@tauri-apps/plugin-http';
 import Manifest from '$lib/core/manifest';
-import { isEpicApiError } from '$lib/utils/util';
-import EpicAPIError from '$lib/exceptions/EpicAPIError';
 import { get } from 'svelte/store';
+import { isEpicApiError } from '$lib/utils/util';
+import Authentication from '$lib/core/authentication';
+import EpicAPIError from '$lib/exceptions/EpicAPIError';
 
-const MAX_AUTH_RETRIES = 1;
+const accessTokenValidationErrors = new Set([
+  'errors.com.epicgames.common.authentication.token_verification_failed',
+  'errors.com.epicgames.common.oauth.invalid_token'
+]);
+
 let userAgent: string;
 
-// Used to avoid any CORS issues
+// Used to avoid CORS issues
 const tauriKy = ky.create({
-  fetch: async (input, options: (RequestInit & { _authRetryCount?: number; }) | undefined) => {
-    const request = new Request(input, options);
-    const headers = new Headers(request.headers);
-
-    options ??= {};
-    options._authRetryCount ??= 0;
-
-    if (!headers.has('x-user-agent')) {
-      userAgent ??= await Manifest.getFortniteUserAgent();
-      headers.set('User-Agent', userAgent);
-    } else {
-      headers.set('User-Agent', request.headers.get('x-user-agent')!);
-      headers.delete('x-user-agent');
+  timeout: 30000,
+  fetch: async (input, init = {}) => {
+    const url = input instanceof Request ? input.url : input.toString();
+    if (!isEpicUrl(url)) {
+      return fetch(input, init);
     }
 
-    const requestBody = request.body ? await request.arrayBuffer() : undefined;
+    userAgent ??= await Manifest.getFortniteUserAgent();
 
-    const response = await fetch(request.url, {
-      method: request.method,
-      headers,
-      body: requestBody
-    });
-
-    let data: unknown;
-    const isJsonResponse = response.headers.get('Content-Type')?.includes('application/json');
-
-    if (isJsonResponse) {
-      data = await response.json();
-    } else {
-      data = await response.arrayBuffer();
+    const mergedHeaders = new Headers(init.headers);
+    if (input instanceof Request) {
+      for (const [key, value] of input.headers.entries()) {
+        if (!mergedHeaders.has(key)) {
+          mergedHeaders.set(key, value);
+        }
+      }
     }
 
-    if (isEpicApiError(data)) {
-      const isInvalidTokenError = [
-        'errors.com.epicgames.common.authentication.token_verification_failed',
-        'errors.com.epicgames.common.oauth.invalid_token'
-      ].includes(data.errorCode);
+    if (!mergedHeaders.has('User-Agent')) {
+      mergedHeaders.set('User-Agent', userAgent);
+    }
 
-      if (isInvalidTokenError && options._authRetryCount < MAX_AUTH_RETRIES) {
-        options._authRetryCount++;
+    init.headers = mergedHeaders;
+    return fetch(input, init);
+  },
+  retry: {
+    limit: 1,
+    shouldRetry: async ({ error }) => {
+      if (!isHTTPError(error) || !isEpicUrl(error.request.url)) return false;
 
-        const account = getAccountFromRequest(request);
+      const errorData = await error.response.json();
+      return isEpicApiError(errorData) && accessTokenValidationErrors.has(errorData.errorCode);
+    }
+  },
+  hooks: {
+    beforeRetry: [
+      async ({ request, error }) => {
+        const account = getAccountFromToken(request.headers.get('Authorization')?.replace('Bearer ', '') || '');
         if (!account) {
-          throw new EpicAPIError(data, request, response.status);
+          throw error;
         }
 
         accessTokenCache.update((cache) => {
@@ -64,49 +64,32 @@ const tauriKy = ky.create({
           return cache;
         });
 
-        const accessTokenData = await Authentication.getAccessTokenUsingDeviceAuth(account, false);
-        if (options.headers instanceof Headers) {
-          options.headers.set('Authorization', `Bearer ${accessTokenData.access_token}`);
-        } else {
-          options.headers = {
-            ...options.headers,
-            Authorization: `Bearer ${accessTokenData.access_token}`
-          };
-        }
-
-        return tauriKy(input, options);
+        const accessData = await Authentication.getAccessTokenUsingDeviceAuth(account, false);
+        request.headers.set('Authorization', `Bearer ${accessData.access_token}`);
       }
+    ],
+    beforeError: [
+      async (error) => {
+        if (!isHTTPError(error) || !isEpicUrl(error.request.url)) return error;
 
-      throw new EpicAPIError(data, request, response.status);
-    }
+        const data = await error.response.json();
+        if (!isEpicApiError(data)) return error;
 
-    let body: BodyInit | null = null;
-
-    if (![101, 103, 204, 205, 304].includes(response.status)) {
-      if (isJsonResponse) {
-        body = JSON.stringify(data);
-      } else if (data) {
-        body = data as ArrayBuffer;
+        throw new EpicAPIError(data, error.request, error.response.status);
       }
-    }
-
-    return new Response(body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers: response.headers
-    });
-  },
-  retry: 0,
-  timeout: 30000
+    ]
+  }
 });
 
-function getAccountFromRequest(request: Request) {
+function getAccountFromToken(token: string) {
   const tokenCache = get(accessTokenCache);
   const accounts = get(accountsStorage).accounts;
-  const token = request.headers.get('Authorization')?.split(' ')[1];
   const accountId = Object.keys(tokenCache).find((accountId) => tokenCache[accountId]?.access_token === token);
-
   return accounts.find((account) => account.accountId === accountId);
+}
+
+function isEpicUrl(url: string) {
+  return (new URL(url).hostname.endsWith('epicgames.com'));
 }
 
 export default tauriKy;
