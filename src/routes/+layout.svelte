@@ -38,7 +38,7 @@
     if (!$settingsStorage.app?.checkForUpdates) return;
 
     const currentVersion = await getVersion();
-    const latestVersion = await ky.get<GitHubRelease>(`https://api.github.com/repos/BurakYs/Spitfire-Launcher/releases/latest`).json();
+    const latestVersion = await ky.get<GitHubRelease>(`https://api.github.com/repos/bur4ky/spitfire-launcher/releases/latest`).json();
 
     if (latestVersion.tag_name.replace('v', '') !== currentVersion) {
       hasNewVersion = true;

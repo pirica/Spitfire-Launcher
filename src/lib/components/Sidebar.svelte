@@ -33,7 +33,7 @@
     },
     {
       name: $t('sidebar.externalLinks.repository'),
-      href: 'https://github.com/BurakYs/Spitfire-Launcher',
+      href: 'https://github.com/bur4ky/spitfire-launcher',
       icon: '/assets/icons/github.svg'
     }
   ]);
@@ -163,7 +163,7 @@
           {$t('sidebar.version')}
           <ExternalLink
             class="underline underline-offset-2"
-            href="https://github.com/BurakYs/Spitfire-Launcher/releases/tag/v{version}"
+            href="https://github.com/bur4ky/spitfire-launcher/releases/tag/v{version}"
           >
             v{version}
           </ExternalLink>

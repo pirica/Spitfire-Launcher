@@ -2,7 +2,7 @@
 name = "spitfire-launcher"
 version = "1.7.0"
 description = "A cross-platform launcher for Fortnite Battle Royale and Save the World"
-authors = ["BurakYs"]
+authors = ["bur4ky"]
 edition = "2021"
 
 [lib]

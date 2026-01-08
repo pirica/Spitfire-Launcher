@@ -2,7 +2,7 @@
 
 A launcher for Fortnite Battle Royale and Save the World
 
-![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/BurakYs/Spitfire-Launcher/total?label=Total+Downloads)
+![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/bur4ky/spitfire-launcher/total?label=Total+Downloads)
 
 ![Launcher Preview](assets/launcher-preview.png)
 
@@ -19,7 +19,7 @@ A launcher for Fortnite Battle Royale and Save the World
 
 ## Installation
 
-Download the latest release from the [releases](https://github.com/BurakYs/Spitfire-Launcher/releases/latest) page or from [our website](https://rookie-spitfire.xyz/launcher).
+Download the latest release from the [releases](https://github.com/bur4ky/spitfire-launcher/releases/latest) page or from [our website](https://rookie-spitfire.xyz/launcher).
 
 - **Windows:** `Spitfire.Launcher_x.x.x_x64-setup.exe`
 - **Android:** `Spitfire.Launcher_x.x.x.apk`
@@ -58,7 +58,7 @@ Just run the latest setup file to update. The launcher also notifies you when an
 
 ## Development Setup
 
-See the [Setup Guide](https://github.com/BurakYs/Spitfire-Launcher/wiki/Setting-Up-Locally) for instructions on how to set up the project locally.
+See the [Setup Guide](https://github.com/bur4ky/spitfire-launcher/wiki/Setting-Up-Locally) for instructions on how to set up the project locally.
 
 ## Translating
 
@@ -70,7 +70,7 @@ If you also join our [Discord](https://discord.gg/rAUbXf5xUZ), you will get the 
 Contributions are welcome. If you want to help improve Spitfire Launcher, follow these steps:
 
 1. Go to the GitHub repo and create a fork.
-2. Run `git clone https://github.com/YourUsername/Spitfire-Launcher.git`.
+2. Run `git clone https://github.com/YourUsername/spitfire-launcher.git`.
 3. Use `git checkout -b your-feature-name`.
 4. Implement your changes and commit them with clear messages.
 5. Run `git push origin your-feature-name`.
