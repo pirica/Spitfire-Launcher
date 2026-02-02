@@ -154,9 +154,8 @@
       <Separator />
 
       <div class="flex w-full gap-3">
-        <!-- ignoreNonKeyboardFocus prevents the browser from automatically focusing the tooltip on open -->
-        <Tooltip.Root ignoreNonKeyboardFocus={true}>
-          <Tooltip.Trigger class="w-full">
+        <Tooltip.Root>
+          <Tooltip.Trigger class="w-full" tabindex={-1}>
             <Button
               class="flex justify-center items-center gap-x-2 w-full"
               disabled={isPurchasing || ownedVbucks < $discountedPrice || isItemOwned}
@@ -177,8 +176,8 @@
           {/if}
         </Tooltip.Root>
 
-        <Tooltip.Root ignoreNonKeyboardFocus={true}>
-          <Tooltip.Trigger class="w-full">
+        <Tooltip.Root>
+          <Tooltip.Trigger class="w-full" tabindex={-1}>
             <Button
               class="flex justify-center items-center gap-x-2 w-full"
               disabled={isSendingGifts || remainingGifts < 1 || ownedVbucks < item.price.final || !item.giftable || !friends.length}
