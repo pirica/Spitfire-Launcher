@@ -6,81 +6,69 @@ A launcher for Fortnite Battle Royale and Save the World
 
 ![Launcher Preview](launcher-preview.png)
 
-## Table of Contents
-
-- [📥 Installation](#installation)
-- [ℹ️ Good to Know](#good-to-know)
-- [⚙️ Features](#features)
-- [🔄 Updating](#updating)
-- [💻 Development Setup](#development-setup)
-- [🤝 Contributing](#contributing)
-- [💡 Credits](#credits)
-- [📜 License](#license)
-
 ## Installation
 
-Download the latest release from the [releases](https://github.com/bur4ky/spitfire-launcher/releases/latest) page or from [our website](https://rookie-spitfire.xyz/launcher).
+Download the latest release from the [releases page](https://github.com/bur4ky/spitfire-launcher/releases/latest) or from [our website](https://rookie-spitfire.xyz/launcher).
 
-- **Windows:** `Spitfire.Launcher_x.x.x_x64-setup.exe`
-- **Android:** `Spitfire.Launcher_x.x.x.apk`
+## Key Features
 
-## Good to Know
+- Multiple account support
+- Multiple language support: German, English, French, Spanish, Portuguese and Turkish
+- Taxi service: Play STW missions above your power level
+- Auto-kick: Kick instantly, auto-claim rewards, auto-transfer materials and auto-invite your friends when the STW mission ends
+- Download games: Download and launch games from the Epic Games Store
+- View item shop, STW quests and mission alerts
+- Friend management
+- Authentication: Generate access tokens, exchange codes and device auths for your account
 
-On first install, SmartScreen may show a blue warning. This happens because the launcher isn't code‑signed (as signing is expensive). You can safely click "Run anyway" to continue the installation.
+## Bug Reports & Feature Requests
 
-Settings are stored in:
+You can report bugs and request features either through [GitHub Issues](https://github.com/bur4ky/spitfire-launcher/issues) or on our [Discord](https://discord.gg/rAUbXf5xUZ).
 
-- **Windows:** `C:/Users/%USERNAME%/AppData/Roaming/spitfire-launcher`
-- **Android:** `/data/user/0/com.spitfire_launcher.app` (Requires root access)
+Before creating a report, please check if it has already been submitted to avoid duplicates.  
+When reporting bugs, keep **Enable Debug Logs** turned on and include as much detail as possible (logs, steps to reproduce, screenshots, etc.).
 
-## Features
-
-### Customizable
-
-- Choose launcher language from 6 different languages: German, English, French, Spanish, Portuguese and Turkish
-- Customize the sidebar with your most used features.
-
-### Bulk Actions
-
-- Redeem codes, view V-Bucks information and daily quests across multiple accounts with a single click.
-
-### Game & Account Management
-
-- Download and launch games from the Epic Games Store
-- View item shop, mission alerts, daily quests, and earned XP
-- Auto-kick and taxi features for Save the World
-- Set custom game statuses
-- Manage friends, party, and device authentication
-
-## Updating
-
-Just run the latest setup file to update. The launcher also notifies you when an update is available.
-
-## Development Setup
-
-See the [Setup Guide](https://github.com/bur4ky/spitfire-launcher/wiki/Setting-Up-Locally) for instructions on how to set up the project locally.
+Logs can be found in F12 -> Console.
 
 ## Translating
 
 You can help us translate the launcher on [Crowdin](https://crowdin.com/project/rookie-spitfire).  
-If you also join our [Discord](https://discord.gg/rAUbXf5xUZ), you will get the Translator role as a thank-you.
+If you also join our [Discord](https://discord.gg/rAUbXf5xUZ), you will get the Translator role.
 
-## Contributing
+## Development Setup
 
-Contributions are welcome. If you want to help improve Spitfire Launcher, follow these steps:
+### Prerequisites
 
-1. Go to the GitHub repo and create a fork.
-2. Run `git clone https://github.com/YourUsername/spitfire-launcher.git`.
-3. Use `git checkout -b your-feature-name`.
-4. Implement your changes and commit them with clear messages.
-5. Run `git push origin your-feature-name`.
-6. Submit a pull request on GitHub.
+1. **Install Bun**
+   - Windows:
+     ```powershell
+     powershell -c "irm bun.sh/install.ps1 | iex"
+     ```
+   - Linux & macOS:
+     ```sh
+     curl -fsSL https://bun.sh/install | bash
+     ```
 
-## Credits
+2. **Setup Tauri**
+   - Follow the official prerequisites guide:  
+     https://v2.tauri.app/start/prerequisites
 
-- [Ciensprog](https://github.com/Ciensprog) - The resources and some ideas from his [Aerial Launcher](https://github.com/Ciensprog/Aerial-Launcher) project helped me a lot.
-- [LeleDerGrasshalmi](https://github.com/LeleDerGrasshalmi) - His [Endpoints Documentation](https://github.com/LeleDerGrasshalmi/FortniteEndpointsDocumentation) was really helpful.
+### Configuring Android
+
+To build the launcher for Android, you’ll need to create and configure a signing keystore.
+
+Follow the official Tauri guide [here](https://v2.tauri.app/distribute/sign/android/#configure-the-signing-key).
+
+You can skip the Gradle steps since it is already configured.
+
+### Running the App
+
+```sh
+bun install
+bun tauri dev
+# bun tauri android dev
+```
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU General Public License v3.0 – see the [LICENSE](LICENSE) file for details.
