@@ -8,7 +8,7 @@ A launcher for Fortnite Battle Royale and Save the World
 
 ## Installation
 
-Download the latest release from the [releases page](https://github.com/bur4ky/spitfire-launcher/releases/latest) or from [our website](https://rookie-spitfire.xyz/launcher).
+Download the latest release from the [releases page](https://github.com/bur4ky/spitfire-launcher/releases/latest) or our [website](https://rookie-spitfire.xyz/launcher).
 
 ## Key Features
 
@@ -23,11 +23,8 @@ Download the latest release from the [releases page](https://github.com/bur4ky/s
 
 ## Bug Reports & Feature Requests
 
-You can report bugs and request features either through [GitHub Issues](https://github.com/bur4ky/spitfire-launcher/issues) or on our [Discord](https://discord.gg/rAUbXf5xUZ).
-
-Before creating a report, please check if it has already been submitted to avoid duplicates.  
-When reporting bugs, keep **Enable Debug Logs** turned on and include as much detail as possible (logs, steps to reproduce, screenshots, etc.).
-
+You can report bugs and request features either through [GitHub Issues](https://github.com/bur4ky/spitfire-launcher/issues) or on our [Discord](https://discord.gg/rAUbXf5xUZ).  
+When reporting bugs, keep **Enable Debug Logs** turned on and include as much detail as possible (logs, steps to reproduce, screenshots, etc.).  
 Logs can be found in F12 -> Console.
 
 ## Translating
@@ -53,12 +50,10 @@ If you also join our [Discord](https://discord.gg/rAUbXf5xUZ), you will get the 
    - Follow the official prerequisites guide:  
      https://v2.tauri.app/start/prerequisites
 
-### Configuring Android
+### Configuring Android (Optional)
 
-To build the launcher for Android, you’ll need to create and configure a signing keystore.
-
-Follow the official Tauri guide [here](https://v2.tauri.app/distribute/sign/android/#configure-the-signing-key).
-
+To build the launcher for Android, you’ll need to create and configure a signing keystore.  
+Follow the official Tauri guide [here](https://v2.tauri.app/distribute/sign/android/#configure-the-signing-key).  
 You can skip the Gradle steps since it is already configured.
 
 ### Running the App
