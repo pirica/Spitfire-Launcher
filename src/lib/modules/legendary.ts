@@ -44,8 +44,7 @@ export class Legendary {
         args,
         code: result.code,
         signal: result.signal,
-        stdout: result.stdout?.slice(-512),
-        stderr: result.stderr?.slice(-512)
+        stderr: result.stderr?.slice(-256)
       });
 
       let stdout = result.stdout as T;
