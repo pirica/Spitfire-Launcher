@@ -9,8 +9,8 @@ import { isHTTPError } from 'ky';
 
 const manifest = await Manifest.getFortniteManifest().catch(() => null);
 const userAgent = manifest?.appVersionString
-  ? `Fortnite/${manifest.appVersionString}`
-  : 'Fortnite/++Fortnite+Release-39.30-CL-49874243-Windows';
+  ? `Fortnite/${manifest.appVersionString} Windows/10.0.26100.1.256.64bit`
+  : 'Fortnite/++Fortnite+Release-39.50-CL-51043566-Windows Windows/10.0.26100.1.256.64bit';
 
 export const epicService = tauriKy.extend({
   headers: {
