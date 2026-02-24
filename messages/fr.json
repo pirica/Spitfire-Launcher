@@ -483,8 +483,15 @@
     },
     "invalidValue": "Tu as entré une valeur invalide.",
     "general": {
-      "language": "Langue",
-      "gamePath": "Chemin de Jeu Personnalisé",
+      "language": {
+        "title": "Langue"
+      },
+      "gamePath": {
+        "title": "Chemin de Jeu Personnalisé"
+      },
+      "userAgent": {
+        "title": "User-Agent Personnalisé"
+      },
       "launchArguments": {
         "title": "Arguments de Lancement",
         "description": "Arguments en ligne de commande à utiliser pour lancer Fortnite."
@@ -501,10 +508,18 @@
         "title": "Page de Démarrage",
         "description": "Sélectionne la page à afficher au démarrage du lanceur."
       },
-      "discordStatus": "Statut Discord",
-      "hideToTray": "Masquer dans la Barre d'État Système",
-      "checkForUpdates": "Vérifier les Mises à Jour",
-      "debugLogs": "Activer les Journaux de Débogage",
+      "discordStatus": {
+        "title": "Statut Discord"
+      },
+      "hideToTray": {
+        "title": "Masquer dans la Barre d'État Système"
+      },
+      "checkForUpdates": {
+        "title": "Vérifier les Mises à Jour"
+      },
+      "debugLogs": {
+        "title": "Activer les Journaux de Débogage"
+      },
       "openSettingsFolder": {
         "title": "Ouvrir le Dossier des Paramètres",
         "button": "Ouvrir le Dossier"

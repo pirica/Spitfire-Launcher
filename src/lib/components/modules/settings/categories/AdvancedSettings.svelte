@@ -20,6 +20,10 @@
 </script>
 
 <div class="space-y-6">
+  <SettingItem labelFor="userAgent" orientation="vertical" title={$t('settings.general.userAgent.title')}>
+    <Input id="userAgent" onchange={(e) => handleSettingChange(e, 'userAgent')} value={$settingsStore.app?.userAgent} />
+  </SettingItem>
+
   {#if type() === 'windows'}
     <SettingItem
       description={$t('settings.general.launchArguments.description')}
@@ -67,7 +71,7 @@
     />
   </SettingItem>
 
-  <SettingItem labelFor="debugLogs" orientation="horizontal" title={$t('settings.general.debugLogs')}>
+  <SettingItem labelFor="debugLogs" orientation="horizontal" title={$t('settings.general.debugLogs.title')}>
     <Switch
       id="debugLogs"
       checked={$settingsStore.app?.debugLogs}

@@ -483,8 +483,15 @@
     },
     "invalidValue": "Valor invalido.",
     "general": {
-      "language": "Idioma",
-      "gamePath": "Local de Jogo Personalizado",
+      "language": {
+        "title": "Idioma"
+      },
+      "gamePath": {
+        "title": "Local de Jogo Personalizado"
+      },
+      "userAgent": {
+        "title": "User-Agent Personalizado"
+      },
       "launchArguments": {
         "title": "Argumentos de Lançamento",
         "description": "Argumentos de linha de comando a usar ao iniciar Fortnite."
@@ -501,10 +508,18 @@
         "title": "Página Inicial",
         "description": "Selecionar página a ser mostrada quando o launcher iniciar."
       },
-      "discordStatus": "Status do Discord",
-      "hideToTray": "Ocultar para System Tray",
-      "checkForUpdates": "Procurar por Atualizações",
-      "debugLogs": "Ativar Logs de Depuração",
+      "discordStatus": {
+        "title": "Status do Discord"
+      },
+      "hideToTray": {
+        "title": "Ocultar para System Tray"
+      },
+      "checkForUpdates": {
+        "title": "Procurar por Atualizações"
+      },
+      "debugLogs": {
+        "title": "Ativar Logs de Depuração"
+      },
       "openSettingsFolder": {
         "title": "Abrir Pasta de Configurações",
         "button": "Abrir Pasta"

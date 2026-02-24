@@ -2,6 +2,7 @@
   import GeneralSettings from '$components/modules/settings/categories/GeneralSettings.svelte';
   import CustomizableMenu from '$components/modules/settings/categories/CustomizableMenu.svelte';
   import DownloaderSettings from '$components/modules/settings/categories/DownloaderSettings.svelte';
+  import AdvancedSettings from '$components/modules/settings/categories/AdvancedSettings.svelte';
   import * as Tabs from '$components/ui/tabs';
   import type { LucideIcon } from '$types';
   import DownloadIcon from '@lucide/svelte/icons/download';
@@ -12,7 +13,6 @@
   import type { Component } from 'svelte';
   import { Separator } from '$components/ui/separator';
   import PageContent from '$components/layout/PageContent.svelte';
-  import AdvancedSettings from '$components/modules/settings/categories/AdvancedSettings.svelte';
   import { t } from '$lib/i18n';
 
   type Category = {

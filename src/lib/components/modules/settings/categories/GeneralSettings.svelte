@@ -65,7 +65,7 @@
 </script>
 
 <div class="space-y-6">
-  <SettingItem labelFor="language" orientation="vertical" title={$t('settings.general.language')}>
+  <SettingItem labelFor="language" orientation="vertical" title={$t('settings.general.language.title')}>
     <Select.Root onValueChange={(value) => settingsStore.setLanguage(value as Locale)} type="single" value={$language}>
       <Select.Trigger id="language" class="flex w-full items-center gap-2">
         {@const locale = locales.find((l) => l.locale === $language)}
@@ -85,7 +85,7 @@
   </SettingItem>
 
   {#if type() === 'windows'}
-    <SettingItem labelFor="gamePath" orientation="vertical" title={$t('settings.general.gamePath')}>
+    <SettingItem labelFor="gamePath" orientation="vertical" title={$t('settings.general.gamePath.title')}>
       <SettingsFolderPicker
         id="gamePath"
         defaultPath={$settingsStore.app?.gamePath || 'C:/Program Files/Epic Games'}
@@ -122,7 +122,7 @@
   </SettingItem>
 
   {#if isDesktop}
-    <SettingItem labelFor="discordStatus" orientation="horizontal" title={$t('settings.general.discordStatus')}>
+    <SettingItem labelFor="discordStatus" orientation="horizontal" title={$t('settings.general.discordStatus.title')}>
       <Switch
         id="discordStatus"
         checked={$settingsStore.app?.discordStatus}
@@ -130,7 +130,7 @@
       />
     </SettingItem>
 
-    <SettingItem labelFor="hideToTray" orientation="horizontal" title={$t('settings.general.hideToTray')}>
+    <SettingItem labelFor="hideToTray" orientation="horizontal" title={$t('settings.general.hideToTray.title')}>
       <Switch
         id="hideToTray"
         checked={$settingsStore.app?.hideToTray}
@@ -139,7 +139,7 @@
     </SettingItem>
   {/if}
 
-  <SettingItem labelFor="checkForUpdates" orientation="horizontal" title={$t('settings.general.checkForUpdates')}>
+  <SettingItem labelFor="checkForUpdates" orientation="horizontal" title={$t('settings.general.checkForUpdates.title')}>
     <Switch
       id="checkForUpdates"
       checked={$settingsStore.app?.checkForUpdates}

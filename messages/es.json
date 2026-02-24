@@ -483,8 +483,15 @@
     },
     "invalidValue": "Ha introducido un valor no válido.",
     "general": {
-      "language": "Idioma",
-      "gamePath": "Ruta de Juego Personalizada",
+      "language": {
+        "title": "Idioma"
+      },
+      "gamePath": {
+        "title": "Ruta de Juego Personalizada"
+      },
+      "userAgent": {
+        "title": "User-Agent Personalizado"
+      },
       "launchArguments": {
         "title": "Argumentos de Lanzamiento",
         "description": "Argumentos de línea de comandos para usar al iniciar Fortnite."
@@ -501,10 +508,18 @@
         "title": "Página de Inicio",
         "description": "Seleccione la página a mostrar cuando comience el lanzador."
       },
-      "discordStatus": "Estado de Discord",
-      "hideToTray": "Ocultar en la Bandeja del Sistema",
-      "checkForUpdates": "Buscar Actualizaciones",
-      "debugLogs": "Habilitar Registros de Depuración",
+      "discordStatus": {
+        "title": "Estado de Discord"
+      },
+      "hideToTray": {
+        "title": "Ocultar en la Bandeja del Sistema"
+      },
+      "checkForUpdates": {
+        "title": "Buscar Actualizaciones"
+      },
+      "debugLogs": {
+        "title": "Habilitar Registros de Depuración"
+      },
       "openSettingsFolder": {
         "title": "Abrir Carpeta de Ajustes",
         "button": "Abrir Carpeta"

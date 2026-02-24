@@ -2,21 +2,32 @@ import { defaultClient } from '$lib/constants/clients';
 import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { Manifest } from '$lib/modules/manifest';
 import { tauriKy } from '$lib/services/tauri-ky';
+import { settingsStore } from '$lib/storage';
 import type { EpicAPIErrorData } from '$types/game/authorizations';
 import { getVersion } from '@tauri-apps/api/app';
 import { arch, platform } from '@tauri-apps/plugin-os';
 import { isHTTPError } from 'ky';
 
 const manifest = await Manifest.getFortniteManifest().catch(() => null);
-const userAgent = manifest?.appVersionString
+const defaultUserAgent = manifest?.appVersionString
   ? `Fortnite/${manifest.appVersionString.replace('-Windows', '')} Windows/10.0.26100.1.256.64bit`
   : 'Fortnite/++Fortnite+Release-39.50-CL-51043566 Windows/10.0.26100.1.256.64bit';
 
+let userAgent = defaultUserAgent;
+
+settingsStore.subscribe((settings) => {
+  userAgent = settings.app?.userAgent || defaultUserAgent;
+});
+
 export const epicService = tauriKy.extend({
-  headers: {
-    'X-User-Agent': userAgent
-  },
   hooks: {
+    beforeRequest: [
+      async (request) => {
+        if (!request.headers.has('X-User-Agent')) {
+          request.headers.set('X-User-Agent', userAgent);
+        }
+      }
+    ],
     beforeError: [
       async (error) => {
         if (!isHTTPError(error)) return error;

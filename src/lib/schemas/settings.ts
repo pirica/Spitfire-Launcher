@@ -19,6 +19,7 @@ export const appSettingsSchema = z
       'dailyQuests',
       'library'
     ] satisfies SidebarItem[]),
+    userAgent: z.string(),
     discordStatus: z.boolean(),
     hideToTray: z.boolean(),
     checkForUpdates: z.boolean(),

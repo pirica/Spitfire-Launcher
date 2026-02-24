@@ -483,8 +483,15 @@
     },
     "invalidValue": "Du hast einen ungültigen Wert eingegeben.",
     "general": {
-      "language": "Sprache",
-      "gamePath": "Benutzerdefinierter Spielpfad",
+      "language": {
+        "title": "Sprache"
+      },
+      "gamePath": {
+        "title": "Benutzerdefinierter Spielpfad"
+      },
+      "userAgent": {
+        "title": "Benutzerdefinierter User-Agent"
+      },
       "launchArguments": {
         "title": "Startargumente",
         "description": "Befehlszeilenargumente, die beim Starten von Fortnite verwendet werden."
@@ -501,10 +508,18 @@
         "title": "Startseite",
         "description": "Wähle die Seite aus, die beim Start des Launchers angezeigt wird."
       },
-      "discordStatus": "Discord-Status",
-      "hideToTray": "In Systemleiste Ausblenden",
-      "checkForUpdates": "Auf Updates Prüfen",
-      "debugLogs": "Debug-Protokolle aktivieren",
+      "discordStatus": {
+        "title": "Discord-Status"
+      },
+      "hideToTray": {
+        "title": "In Systemleiste Ausblenden"
+      },
+      "checkForUpdates": {
+        "title": "Auf Updates Prüfen"
+      },
+      "debugLogs": {
+        "title": "Debug-Protokolle Aktivieren"
+      },
       "openSettingsFolder": {
         "title": "Einstellungsordner Öffnen",
         "button": "Ordner Öffnen"

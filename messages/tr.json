@@ -483,8 +483,15 @@
     },
     "invalidValue": "Geçersiz bir değer girdiniz.",
     "general": {
-      "language": "Dil",
-      "gamePath": "Özel Oyun Dosya Yolu",
+      "language": {
+        "title": "Dil"
+      },
+      "gamePath": {
+        "title": "Özel Oyun Dosya Yolu"
+      },
+      "userAgent": {
+        "title": "Özel User-Agent"
+      },
       "launchArguments": {
         "title": "Başlatma Argümanları",
         "description": "Fortnite'ı başlatırken kullanılacak komut satırı argümanları."
@@ -501,10 +508,18 @@
         "title": "Başlangıç Sayfası",
         "description": "Başlatıcı başladığında gösterilecek sayfayı seçin."
       },
-      "discordStatus": "Discord Durumu",
-      "hideToTray": "Sistem Tepsisine Gizle",
-      "checkForUpdates": "Güncellemeleri Kontrol Et",
-      "debugLogs": "Hata Ayıklama Günlüklerini Etkinleştir",
+      "discordStatus": {
+        "title": "Discord Durumu"
+      },
+      "hideToTray": {
+        "title": "Sistem Tepsisine Gizle"
+      },
+      "checkForUpdates": {
+        "title": "Güncellemeleri Kontrol Et"
+      },
+      "debugLogs": {
+        "title": "Hata Ayıklama Günlüklerini Etkinleştir"
+      },
       "openSettingsFolder": {
         "title": "Ayarlar Klasörünü Aç",
         "button": "Klasörü Aç"

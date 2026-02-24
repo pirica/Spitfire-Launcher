@@ -483,8 +483,15 @@
     },
     "invalidValue": "You have entered an invalid value.",
     "general": {
-      "language": "Language",
-      "gamePath": "Custom Game Path",
+      "language": {
+        "title": "Language"
+      },
+      "gamePath": {
+        "title": "Custom Game Path"
+      },
+      "userAgent": {
+        "title": "Custom User-Agent"
+      },
       "launchArguments": {
         "title": "Launch Arguments",
         "description": "Command-line arguments to use when launching Fortnite."
@@ -501,10 +508,18 @@
         "title": "Starting Page",
         "description": "Select the page to show when the launcher starts."
       },
-      "discordStatus": "Discord Status",
-      "hideToTray": "Hide to System Tray",
-      "checkForUpdates": "Check for Updates",
-      "debugLogs": "Enable Debug Logs",
+      "discordStatus": {
+        "title": "Discord Status"
+      },
+      "hideToTray": {
+        "title": "Hide to System Tray"
+      },
+      "checkForUpdates": {
+        "title": "Check for Updates"
+      },
+      "debugLogs": {
+        "title": "Enable Debug Logs"
+      },
       "openSettingsFolder": {
         "title": "Open Settings Folder",
         "button": "Open Folder"
