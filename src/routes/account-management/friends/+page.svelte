@@ -6,7 +6,7 @@
 <script lang="ts">
   import PageContent from '$components/layout/PageContent.svelte';
   import FriendsList, { type ListType } from '$components/modules/friends/FriendsList.svelte';
-  import FriendCardSkeleton from '$components/modules/friends/FriendCardSkeleton.svelte';
+  import FriendsListSkeleton from '$components/modules/friends/skeletons/FriendsListSkeleton.svelte';
   import { Button } from '$components/ui/button';
   import * as Tabs from '$components/ui/tabs';
   import { Friends } from '$lib/modules/friends';
@@ -132,7 +132,7 @@
   </form>
 
   <div>
-    <Tabs.Root class="mb-4" bind:value={activeTab}>
+    <Tabs.Root class="mb-2" bind:value={activeTab}>
       <Tabs.List>
         {#each tabs as tab (tab.id)}
           <Tabs.Trigger disabled={!tab.count} value={tab.id}>
@@ -150,21 +150,7 @@
     </Tabs.Root>
 
     {#if isLoading}
-      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <div class="hidden sm:contents">
-          <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-          {#each Array(12) as _, index (index)}
-            <FriendCardSkeleton />
-          {/each}
-        </div>
-
-        <div class="hidden not-sm:contents">
-          <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -->
-          {#each Array(6) as _, index (index)}
-            <FriendCardSkeleton />
-          {/each}
-        </div>
-      </div>
+      <FriendsListSkeleton />
     {:else}
       <FriendsList listType={activeTab} bind:searchQuery />
     {/if}

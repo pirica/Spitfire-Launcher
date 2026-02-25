@@ -98,7 +98,7 @@
   });
 </script>
 
-<div class="group flex items-center rounded-md border bg-card px-3 py-2 text-card-foreground">
+<div class="flex items-center rounded-md border bg-card px-3 py-2 text-card-foreground">
   <div class="flex items-center gap-2">
     <div class="relative shrink-0">
       <img class="size-8 rounded-full" alt={friend.displayName} loading="lazy" src={friend.avatarUrl} />
@@ -122,7 +122,7 @@
   </div>
 
   <DropdownMenu.Root>
-    <DropdownMenu.Trigger class="ml-auto opacity-0 transition group-hover:opacity-100 data-[state=open]:opacity-100">
+    <DropdownMenu.Trigger class="ml-auto">
       <EllipsisIcon class="size-4.5 cursor-pointer text-muted-foreground" />
     </DropdownMenu.Trigger>
 
