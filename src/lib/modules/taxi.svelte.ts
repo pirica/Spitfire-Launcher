@@ -61,9 +61,9 @@ export class TaxiManager {
   async start() {
     this.isStarting = true;
     this.abortController = new AbortController();
-    const { signal } = this.abortController;
 
     try {
+      const signal = this.abortController.signal;
       this.xmpp = await XMPPManager.new(this.account, 'taxiService');
       await this.xmpp.connect();
 
@@ -99,10 +99,8 @@ export class TaxiManager {
   async stop() {
     this.isStopping = true;
 
-    if (this.partyTimeoutId) {
-      window.clearTimeout(this.partyTimeoutId);
-      this.partyTimeoutId = undefined;
-    }
+    window.clearTimeout(this.partyTimeoutId);
+    this.partyTimeoutId = undefined;
 
     this.abortController?.abort();
     this.abortController = undefined;
@@ -112,6 +110,7 @@ export class TaxiManager {
 
     this.isStopping = false;
     this.active = false;
+
     TaxiManager.taxiAccountIds.delete(this.account.accountId);
   }
 
@@ -125,7 +124,7 @@ export class TaxiManager {
         count: incomingRequests.length
       });
 
-      await Friends.acceptAllIncomingRequests(
+      await Friends.acceptIncomingMulti(
         this.account,
         incomingRequests.map((x) => x.accountId)
       );
@@ -172,10 +171,7 @@ export class TaxiManager {
 
     this.setIsAvailable(false);
 
-    if (this.partyTimeoutId) {
-      window.clearTimeout(this.partyTimeoutId);
-    }
-
+    window.clearTimeout(this.partyTimeoutId);
     this.partyTimeoutId = window.setTimeout(async () => {
       const currentParty = accountPartiesStore.get(this.account.accountId);
       if (currentParty) {
@@ -195,15 +191,18 @@ export class TaxiManager {
       | EpicEventPartyUpdated
   ) {
     if (event.type === EpicEvents.MemberJoined && event.account_id === this.account.accountId) {
-      return this.setPowerLevel(event.party_id, event.revision);
+      this.setPowerLevel(event.party_id, event.revision);
+      return;
     }
 
     if ('member_state_updated' in event) {
       const packedState = JSON.parse(
         event.member_state_updated['Default:PackedState_j']?.replaceAll('True', 'true') || '{}'
       )?.PackedState;
+
       if (packedState?.location === 'Lobby') {
-        return Party.leave(this.account, event.party_id);
+        Party.leave(this.account, event.party_id);
+        return;
       }
     }
 
@@ -215,10 +214,8 @@ export class TaxiManager {
     } else {
       this.setIsAvailable(true);
 
-      if (this.partyTimeoutId) {
-        window.clearTimeout(this.partyTimeoutId);
-        this.partyTimeoutId = undefined;
-      }
+      window.clearTimeout(this.partyTimeoutId);
+      this.partyTimeoutId = undefined;
     }
   }
 

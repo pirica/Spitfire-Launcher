@@ -30,27 +30,30 @@
 
   const { listType, searchQuery = $bindable() }: Props = $props();
 
-  const list = $derived(
-    (friendsStore.get($accountStore.activeAccountId!)?.[listType]?.values().toArray() || [])
-      .map((data: FriendData | IncomingFriendRequestData | OutgoingFriendRequestData | BlockedAccountData) => ({
+  const list = $derived<Friend[]>(
+    friendsStore
+      .get($accountStore.activeAccountId!)
+      ?.[listType]?.values()
+      ?.map((data: FriendData | IncomingFriendRequestData | OutgoingFriendRequestData | BlockedAccountData) => ({
         accountId: data.accountId,
         displayName: displayNamesCache.get(data.accountId) || data.accountId,
         nickname: 'alias' in data ? data.alias : undefined,
         avatarUrl: avatarCache.get(data.accountId) || '/misc/default-outfit-icon.png',
         createdAt: new Date(data.created)
       }))
+      .toArray()
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .filter((friend) => {
         if (!searchQuery) return true;
 
         const search = searchQuery.toLowerCase();
         return friend.displayName.toLowerCase().includes(search) || friend.accountId.toLowerCase().includes(search);
-      }) satisfies Friend[]
+      }) || []
   );
 </script>
 
 {#if list?.length}
-  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl-plus:grid-cols-4">
+  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl-plus:grid-cols-4 2xl:grid-cols-5">
     {#each list as friend (friend.accountId)}
       <FriendCard {friend} {listType} />
     {/each}

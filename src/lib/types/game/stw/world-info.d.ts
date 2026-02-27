@@ -133,4 +133,4 @@ export type WorldParsedMission = {
   } | null;
 };
 
-export type ParsedWorldInfo = Map<Theaters, Map<string, WorldParsedMission>>;
+export type ParsedWorldInfo = Map<(typeof Theaters)[keyof typeof Theaters], Map<string, WorldParsedMission>>;

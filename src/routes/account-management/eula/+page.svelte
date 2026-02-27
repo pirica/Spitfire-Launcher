@@ -7,7 +7,15 @@
 
   let selectedAccounts = $state<string[]>([]);
   let isFetching = $state(false);
-  let eulaStates = $state<EULAState[]>([]);
+  let eulaStates = $state<EULAState[]>([
+    {
+      accountId: '05006cb489c347beaad83551a1b9544e',
+      displayName: 'BurakYhs',
+      data: {
+        acceptLink: 'https://www.epicgames.com/id/accept-eula?accountId=123'
+      }
+    }
+  ]);
 </script>
 
 <script lang="ts">
@@ -23,6 +31,7 @@
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { getAccountsFromSelection, handleError } from '$lib/utils';
   import { t } from '$lib/i18n';
+  import { avatarCache } from '$lib/stores';
 
   async function checkEULA(event: SubmitEvent) {
     event.preventDefault();
@@ -92,13 +101,20 @@
   </form>
 
   {#if !isFetching && eulaStates.length}
-    <div class="mt-4 space-y-4">
+    <div class="space-y-2">
       {#each eulaStates as state (state.accountId)}
-        <div class="flex items-center justify-between rounded-lg border bg-muted px-3 py-2">
-          <span class="truncate font-semibold">{state.displayName}</span>
+        <div class="flex items-center justify-between rounded-md bg-secondary px-3 py-2">
+          <div class="flex items-center gap-2">
+            <img
+              class="size-6 rounded-full"
+              alt="Avatar"
+              src={avatarCache.get(state.accountId) || '/misc/default-outfit-icon.png'}
+            />
+            <span class="truncate text-sm font-semibold">{state.displayName}</span>
+          </div>
 
           <ExternalLink
-            class="flex size-8 items-center justify-center rounded-md hover:bg-muted-foreground/10"
+            class="flex items-center justify-center rounded-md p-1 transition-colors hover:bg-accent"
             href={state.data.acceptLink!}
           >
             <ExternalLinkIcon class="size-5" />

@@ -1,5 +1,4 @@
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
-import { toast } from 'svelte-sonner';
 
 export class Notification {
   static async requestPermission() {
@@ -9,14 +8,11 @@ export class Notification {
     return permission === 'granted';
   }
 
-  static async sendNotification(message: string, title?: string, sendToast?: boolean) {
-    if (sendToast) toast.info(message);
-
+  static async sendNotification(message: string, title = 'Spitfire Launcher') {
     const permissionGranted = await this.requestPermission();
     if (!permissionGranted) return false;
 
-    sendNotification({ title: title || 'Spitfire Launcher', body: message });
-
+    sendNotification({ title, body: message });
     return true;
   }
 }

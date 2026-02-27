@@ -1,12 +1,5 @@
-import {
-  ingredients,
-  RarityNames,
-  RarityTypes,
-  resources,
-  survivors,
-  survivorsMythicLeads,
-  traps
-} from '$lib/constants/stw/resources';
+import { ingredients, resources, survivors, survivorsMythicLeads, traps } from '$lib/data';
+import { RarityNames, Rarities } from '$lib/constants/stw/resources';
 import {
   GroupZones,
   Theaters,
@@ -18,7 +11,7 @@ import {
 import { Authentication } from '$lib/modules/authentication';
 import { baseGameService } from '$lib/services/epic';
 import { worldInfoCache } from '$lib/stores';
-import type { ParsedModifierData, ParsedResourceData, RarityType } from '$types/game/stw/resources';
+import type { ParsedModifierData, ParsedRarityData, ParsedResourceData, RarityType } from '$types/game/stw/resources';
 import type {
   ParsedWorldInfo,
   WorldInfoData,
@@ -29,7 +22,7 @@ import type {
 } from '$types/game/stw/world-info';
 import { get } from 'svelte/store';
 
-type Theater = keyof typeof Theaters;
+type Theaters = keyof typeof Theaters;
 
 type RewardItem = {
   itemType: string;
@@ -42,7 +35,7 @@ export class WorldInfo {
     worldInfoCache.set(WorldInfo.parse(await WorldInfo.get()));
   }
 
-  static async get(accessToken?: string) {
+  static async get(accessToken?: string): Promise<WorldInfoData> {
     const token = accessToken || (await Authentication.getAccessTokenUsingClientCredentials()).access_token;
 
     return baseGameService
@@ -53,7 +46,7 @@ export class WorldInfo {
   }
 
   static parse(data: WorldInfoData): ParsedWorldInfo {
-    const worldInfo = new Map<Theater, Map<string, WorldParsedMission>>();
+    const worldInfo: ParsedWorldInfo = new Map();
     const validTheaters: string[] = [
       Theaters.Stonewood,
       Theaters.Plankerton,
@@ -62,7 +55,7 @@ export class WorldInfo {
     ];
 
     for (const theater of data.theaters) {
-      const theaterId = theater.uniqueId as Theater;
+      const theaterId = theater.uniqueId as (typeof Theaters)[keyof typeof Theaters];
       if (!validTheaters.includes(theaterId) && theater.missionRewardNamedWeightsRowName !== 'Theater.Phoenix') {
         continue;
       }
@@ -194,7 +187,7 @@ export class WorldInfo {
     };
   }
 
-  private static mergeItems(items: RewardItem[]) {
+  private static mergeItems(items: RewardItem[]): RewardItem[] {
     const map = new Map<string, RewardItem>();
 
     for (const item of items) {
@@ -280,7 +273,7 @@ export class WorldInfo {
       if (!newKey.includes(id)) continue;
 
       data.imageUrl = `/survivors/unique-leads/${id}.png`;
-      data.name = `${get(RarityNames)[RarityTypes.Mythic]} Lead`;
+      data.name = `${get(RarityNames)[Rarities.Mythic]} Lead`;
       data.type = 'worker';
 
       return data;
@@ -344,10 +337,10 @@ export class WorldInfo {
     return data;
   }
 
-  private static parseRarity(key: string) {
-    let rarity: RarityType = RarityTypes.Common;
+  private static parseRarity(key: string): ParsedRarityData {
+    let rarity: RarityType = Rarities.Common;
 
-    for (const r of Object.values(RarityTypes)) {
+    for (const r of Object.values(Rarities)) {
       if (key.includes(`_${r}`)) {
         rarity = r;
         break;

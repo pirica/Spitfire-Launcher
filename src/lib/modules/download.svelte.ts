@@ -82,7 +82,7 @@ class DownloadManagerC {
     ];
 
     await this.saveQueueToFile();
-    return this.processQueue();
+    await this.processQueue();
   }
 
   async removeFromQueue(appId: string) {
@@ -216,17 +216,17 @@ class DownloadManagerC {
           }
 
           if (!this.activeDownload?.paused) {
-            this.cleanupActiveDownload();
+            await this.cleanupActiveDownload();
           }
         },
         onError: async (error) => {
           await this.handleDownloadError(item, type, error);
-          this.cleanupActiveDownload();
+          await this.cleanupActiveDownload();
         }
       });
     } catch (error) {
       await this.handleDownloadError(item, type, error);
-      this.cleanupActiveDownload();
+      await this.cleanupActiveDownload();
     }
   }
 
@@ -238,7 +238,7 @@ class DownloadManagerC {
     // If it was paused, the stream is already stopped so we just clean up
     if (this.activeDownload.paused) {
       this.queue = this.queue.filter((q) => q.item.id !== this.downloadingAppId);
-      this.cleanupActiveDownload();
+      await this.cleanupActiveDownload();
     } else {
       await Tauri.stopLegendaryStream({
         streamId: this.activeDownload.streamId,
@@ -370,7 +370,7 @@ class DownloadManagerC {
     });
   }
 
-  private cleanupActiveDownload() {
+  private async cleanupActiveDownload() {
     if (!this.activeDownload?.paused) {
       this.activeDownload?.unlisten();
     }
@@ -379,9 +379,11 @@ class DownloadManagerC {
     this.downloadingAppId = null;
     this.progress = {};
 
-    this.processQueue().catch((error) => {
+    try {
+      await this.processQueue();
+    } catch (error) {
       logger.error('Failed to process download queue', { error });
-    });
+    }
   }
 
   private parseDownloadOutput(output: string) {

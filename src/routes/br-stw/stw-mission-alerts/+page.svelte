@@ -7,8 +7,8 @@
   import { MCP } from '$lib/modules/mcp';
   import type { WorldParsedMission } from '$types/game/stw/world-info';
   import { claimedMissionAlerts, worldInfoCache } from '$lib/stores';
-  import { TheaterPowerLevels, Theaters, ZoneCategories } from '$lib/constants/stw/world-info';
-  import { language, t } from '$lib/i18n';
+  import { TheaterNames, TheaterPowerLevels, Theaters, ZoneCategories } from '$lib/constants/stw/world-info';
+  import { t } from '$lib/i18n';
   import { WorldInfo } from '$lib/modules/world-info';
   import { onMount } from 'svelte';
   import { accountStore } from '$lib/storage';
@@ -16,7 +16,6 @@
   import { Button } from '$components/ui/button';
   import FunnelIcon from '@lucide/svelte/icons/funnel';
   import FilterSheet, { filters } from '$components/modules/mission-alerts/FilterSheet.svelte';
-  import { theaters } from '$lib/constants/stw/resources';
 
   const activeAccount = accountStore.getActiveStore(true);
 
@@ -289,22 +288,10 @@
     </Tabs.Content>
 
     <Tabs.Content class="space-y-4" value="all">
-      <AlertsSection
-        missions={filteredMissions?.stonewood || []}
-        title={theaters[Theaters.Stonewood].names[$language]}
-      />
-      <AlertsSection
-        missions={filteredMissions?.plankerton || []}
-        title={theaters[Theaters.Plankerton].names[$language]}
-      />
-      <AlertsSection
-        missions={filteredMissions?.cannyValley || []}
-        title={theaters[Theaters.CannyValley].names[$language]}
-      />
-      <AlertsSection
-        missions={filteredMissions?.twinePeaks || []}
-        title={theaters[Theaters.TwinePeaks].names[$language]}
-      />
+      <AlertsSection missions={filteredMissions?.stonewood || []} title={$TheaterNames[Theaters.Stonewood]} />
+      <AlertsSection missions={filteredMissions?.plankerton || []} title={$TheaterNames[Theaters.Plankerton]} />
+      <AlertsSection missions={filteredMissions?.cannyValley || []} title={$TheaterNames[Theaters.CannyValley]} />
+      <AlertsSection missions={filteredMissions?.twinePeaks || []} title={$TheaterNames[Theaters.TwinePeaks]} />
       <AlertsSection missions={filteredMissions?.ventures || []} title={$t('stwMissionAlerts.sections.ventures')} />
     </Tabs.Content>
   </Tabs.Root>

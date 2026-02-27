@@ -26,7 +26,7 @@
   import { Toggle } from '$components/ui/toggle';
   import { writable } from 'svelte/store';
   import { TheaterColors, TheaterLetters, Theaters } from '$lib/constants/stw/world-info';
-  import { RarityTypes } from '$lib/constants/stw/resources';
+  import { Rarities } from '$lib/constants/stw/resources';
   import { Label } from '$components/ui/label';
   import { Switch } from '$components/ui/switch';
   import { t } from '$lib/i18n';
@@ -156,28 +156,28 @@
   const rarityFilters: Filter<{ icon: string }>[] = [
     {
       label: 'Common',
-      value: RarityTypes.Common,
-      icon: `/rarities/${RarityTypes.Common}.png`
+      value: Rarities.Common,
+      icon: `/rarities/${Rarities.Common}.png`
     },
     {
       label: 'Uncommon',
-      value: RarityTypes.Uncommon,
-      icon: `/rarities/${RarityTypes.Uncommon}.png`
+      value: Rarities.Uncommon,
+      icon: `/rarities/${Rarities.Uncommon}.png`
     },
     {
       label: 'Rare',
-      value: RarityTypes.Rare,
-      icon: `/rarities/${RarityTypes.Rare}.png`
+      value: Rarities.Rare,
+      icon: `/rarities/${Rarities.Rare}.png`
     },
     {
       label: 'Epic',
-      value: RarityTypes.Epic,
-      icon: `/rarities/${RarityTypes.Epic}.png`
+      value: Rarities.Epic,
+      icon: `/rarities/${Rarities.Epic}.png`
     },
     {
       label: 'Legendary',
-      value: RarityTypes.Legendary,
-      icon: `/rarities/${RarityTypes.Legendary}.png`
+      value: Rarities.Legendary,
+      icon: `/rarities/${Rarities.Legendary}.png`
     }
   ];
 

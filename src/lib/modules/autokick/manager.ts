@@ -289,14 +289,16 @@ export class AutoKickManager {
     return Promise.allSettled(leaveAccounts.map((x) => Party.leave(x, party.id)));
   }
 
-  private async invite(members: PartyData['members']) {
+  private async invite(members: PartyData['members']): Promise<PromiseSettledResult<unknown>[]> {
     await this.xmpp.waitForEvent(EpicEvents.MemberJoined, (x) => x.account_id === this.account.accountId, 20_000);
     await sleep(10_000);
 
     const [partyData, friends] = await Promise.allSettled([Party.get(this.account), Friends.getFriends(this.account)]);
 
     const party = partyData.status === 'fulfilled' ? partyData.value.current[0] : null;
-    if (!party || friends.status === 'rejected' || !friends.value.length) return;
+    if (!party || friends.status === 'rejected' || !friends.value.length) {
+      return [];
+    }
 
     const prevMemberIds = members.map((x) => x.account_id).filter((x) => x !== this.account.accountId);
     return Promise.allSettled(

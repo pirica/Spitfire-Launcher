@@ -119,6 +119,8 @@ export class Legendary {
       const userConfig = await path.join(status.config_directory, 'user.json');
       const file = await readTextFile(userConfig);
       const data: EpicOAuthData = JSON.parse(file);
+
+      Legendary.cache.account = data.account_id;
       return data.account_id;
     } catch {
       return null;
@@ -133,7 +135,7 @@ export class Legendary {
     return Legendary.execute<LegendaryInstalledList>(['list-installed', '--json']);
   }
 
-  static async syncEGL() {
+  static syncEGL() {
     return Legendary.execute(['egl-sync', '-y', '--enable-sync']);
   }
 
@@ -144,6 +146,7 @@ export class Legendary {
       '--dry-run',
       '--json'
     ]);
+
     return Tauri.launchApp({
       launchData: {
         ...launchData,

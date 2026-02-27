@@ -79,8 +79,12 @@
     shopSections = null;
 
     try {
-      const response = (!forceRefresh && $brShopStore) || (await Shop.fetch());
-      shopSections = Shop.groupBySections(response.offers).map((section) => ({
+      if (!$brShopStore || forceRefresh) {
+        const response = await Shop.fetch();
+        brShopStore.set(response);
+      }
+
+      shopSections = Shop.groupBySections($brShopStore.offers).map((section) => ({
         ...section,
         items: section.items.sort((a, b) => b.sortPriority - a.sortPriority)
       }));

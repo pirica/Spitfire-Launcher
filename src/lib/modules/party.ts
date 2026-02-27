@@ -103,7 +103,7 @@ export class Party {
 
   static getInviterParty(account: AccountData, senderId: string) {
     return AuthSession.ky(account, partyService)
-      .get<[InviterPartyResponse]>(`user/${account.accountId}/pings/${senderId}/parties`)
+      .get<InviterPartyResponse[]>(`user/${account.accountId}/pings/${senderId}/parties`)
       .json();
   }
 

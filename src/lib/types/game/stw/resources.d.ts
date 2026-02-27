@@ -1,12 +1,12 @@
-import type { RarityTypes } from '$lib/constants/stw/resources';
+import type { Rarities } from '$lib/constants/stw/resources';
 import type { ZoneCategories } from '$lib/constants/stw/world-info';
 import type { Locale } from '$lib/paraglide/runtime';
 import type { WorldParsedMission } from '$types/game/stw/world-info';
 
-export type RarityType = (typeof RarityTypes)[keyof typeof RarityTypes];
+export type RarityType = (typeof Rarities)[keyof typeof Rarities];
 export type ResourceType = 'construction' | 'currency' | 'evo' | 'perk' | 'sc' | 'token' | 'voucher' | 'xp' | 'xpboost';
 
-export type ResourceData = {
+export type Resource = {
   name: string;
   type: ResourceType;
 };
@@ -73,6 +73,12 @@ export type ParsedResourceData = {
 export type ParsedZoneData = {
   id?: keyof typeof ZoneCategories;
   imageUrl: string;
+};
+
+export type ParsedRarityData = {
+  type: string;
+  name: string;
+  rarity: RarityType;
 };
 
 export type DailyQuestData = {

@@ -1,6 +1,15 @@
 export class AsyncLock {
   private queue: Array<() => void> = [];
   private locked = false;
+  private static globalLocks: Map<string, AsyncLock> = new Map();
+
+  static newGlobal(name: string): AsyncLock {
+    if (!this.globalLocks.has(name)) {
+      this.globalLocks.set(name, new AsyncLock());
+    }
+
+    return this.globalLocks.get(name)!;
+  }
 
   async lock(): Promise<() => void> {
     return new Promise<() => void>((resolve) => {

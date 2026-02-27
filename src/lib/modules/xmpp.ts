@@ -55,7 +55,6 @@ type AccountOptions = AccountData & {
 type Purpose = 'autoKick' | 'taxiService' | 'customStatus' | 'party' | 'friends';
 
 const MAX_RECONNECT_ATTEMPTS = 50;
-const connectionLocks = new Map<string, AsyncLock>();
 const logger = getChildLogger('XMPPManager');
 
 export type FriendPresence = {
@@ -84,12 +83,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
   }
 
   static new(account: AccountData, purpose: Purpose) {
-    let lock = connectionLocks.get(account.accountId);
-    if (!lock) {
-      lock = new AsyncLock();
-      connectionLocks.set(account.accountId, lock);
-    }
-
+    const lock = AsyncLock.newGlobal(`${account.accountId}:xmpp:new`);
     return lock.withLock(async () => {
       const existingInstance = XMPPManager.instances.get(account.accountId);
       if (existingInstance) {
@@ -107,7 +101,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
   connect() {
     if (this.connection?.sessionStarted) return;
 
-    const lock = connectionLocks.get(this.account.accountId)!;
+    const lock = AsyncLock.newGlobal(`${this.account.accountId}:xmpp:connect`);
     return lock.withLock(async () => {
       if (this.connection?.sessionStarted) return;
 
@@ -158,10 +152,8 @@ export class XMPPManager extends EventEmitter<EventMap> {
   disconnect() {
     this.intentionalDisconnect = true;
 
-    if (this.reconnectTimeout) {
-      clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = undefined;
-    }
+    clearTimeout(this.reconnectTimeout);
+    this.reconnectTimeout = undefined;
 
     this.connection?.disconnect();
   }

@@ -14,13 +14,16 @@ export class ServerStatus {
       .json();
   }
 
-  static getWaitingRoom() {
-    return epicService
-      .get<WaitingRoomData>(
-        'https://fortnitewaitingroom-public-service-prod.ol.epicgames.com/waitingroom/api/waitingroom'
-      )
-      .json()
-      .catch(() => null);
+  static async getWaitingRoom() {
+    const response = await epicService.get<WaitingRoomData>(
+      'https://fortnitewaitingroom-public-service-prod.ol.epicgames.com/waitingroom/api/waitingroom'
+    );
+
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
   }
 
   static getStatusPage() {

@@ -1,15 +1,16 @@
 <script lang="ts" module>
   import type { LoadoutData } from '$components/modules/lookup-players/STWDetails.svelte';
-  import { FounderEditions, gadgets, heroes, teamPerks } from '$lib/constants/stw/resources';
+  import { gadgets, heroes, teamPerks } from '$lib/data';
+  import { FounderEditions } from '$lib/constants/stw/resources';
 
-  type FounderEdition = (typeof FounderEditions)[keyof typeof FounderEditions];
+  type FounderEditions = (typeof FounderEditions)[keyof typeof FounderEditions];
 
   type STWData = {
     commanderLevel: {
       current: number;
       pastMaximum: number;
     };
-    founderEdition: FounderEdition | null;
+    founderEdition: FounderEditions | null;
     xpBoosts: {
       boostedXp: number;
       boostAmount: number;
@@ -38,7 +39,7 @@
   import { t } from '$lib/i18n';
   import type { CampaignProfile, ProfileItem } from '$types/game/mcp';
   import { MCP } from '$lib/modules/mcp';
-  import { FounderEditionNames, RarityTypes } from '$lib/constants/stw/resources';
+  import { FounderEditionNames, Rarities } from '$lib/constants/stw/resources';
   import { logger } from '$lib/logger';
   import { accountStore } from '$lib/storage';
   import { language } from '$lib/i18n';
@@ -124,7 +125,7 @@
         ? {
             name: heroes[heroId].name,
             icon: `/heroes/${heroId}.png`,
-            rarity: Object.values(RarityTypes).find((rarity) =>
+            rarity: Object.values(Rarities).find((rarity) =>
               selectedCommander.templateId.toLowerCase().includes(`_${rarity}_`)
             )!
           }
@@ -138,7 +139,7 @@
           : undefined,
       supportTeam: supportTeam.map((id) => {
         const heroId = id.replace('Hero:', '').split('_').slice(0, -2).join('_').toLowerCase();
-        const rarity = Object.values(RarityTypes).find((rarity) => id.toLowerCase().includes(`_${rarity}_`))!;
+        const rarity = Object.values(Rarities).find((rarity) => id.toLowerCase().includes(`_${rarity}_`))!;
 
         return {
           name: heroes[heroId].name,
@@ -162,7 +163,7 @@
     loadoutData = loadoutData.sort((a, b) => a.index - b.index);
   }
 
-  function getFounderEdition(items: ProfileItem[]): FounderEdition | null {
+  function getFounderEdition(items: ProfileItem[]): FounderEditions | null {
     const editions = Object.entries(FounderEditions).toReversed();
 
     for (const [, templateId] of editions) {

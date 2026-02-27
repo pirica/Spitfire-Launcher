@@ -25,7 +25,7 @@
   import { Button } from '$components/ui/button';
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
   import { MCP } from '$lib/modules/mcp';
-  import { dailyQuests } from '$lib/constants/stw/resources';
+  import { dailyQuests } from '$lib/data';
   import type { FullQueryProfile } from '$types/game/mcp';
   import BulkResultAccordion from '$components/ui/BulkResultAccordion.svelte';
   import { getAccountsFromSelection, handleError } from '$lib/utils';

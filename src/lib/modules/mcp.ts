@@ -37,12 +37,9 @@ export class MCP {
     offerId: string,
     price: number,
     isPriceRetry?: boolean
-  ): Promise<{
-    vbucksSpent: number;
-    data: any;
-  }> {
+  ): Promise<{ vbucksSpent: number }> {
     try {
-      const purchaseData = await MCP.compose(account, 'PurchaseCatalogEntry', 'common_core', {
+      await MCP.compose(account, 'PurchaseCatalogEntry', 'common_core', {
         offerId,
         purchaseQuantity: 1,
         currency: 'MtxCurrency',
@@ -51,12 +48,9 @@ export class MCP {
         gameContext: 'GameContext: Frontend.CatabaScreen'
       });
 
-      return {
-        vbucksSpent: price,
-        data: purchaseData
-      };
+      return { vbucksSpent: price };
     } catch (error) {
-      if (error instanceof EpicAPIError && MCP.isPriceMismatchError(error) && !isPriceRetry) {
+      if (MCP.isPriceMismatchError(error) && !isPriceRetry) {
         const newPrice = Number.parseInt(error.messageVars[1]);
         if (newPrice > price) throw error;
 
@@ -73,12 +67,9 @@ export class MCP {
     receivers: string[],
     price: number,
     isPriceRetry?: boolean
-  ): Promise<{
-    vbucksSpent: number;
-    data: any;
-  }> {
+  ): Promise<{ vbucksSpent: number }> {
     try {
-      const purchaseData = await MCP.compose(account, 'GiftCatalogEntry', 'common_core', {
+      await MCP.compose(account, 'GiftCatalogEntry', 'common_core', {
         offerId,
         currency: 'MtxCurrency',
         currencySubType: '',
@@ -89,12 +80,9 @@ export class MCP {
         personalMessage: 'Hope you like my gift!'
       });
 
-      return {
-        vbucksSpent: price * receivers.length,
-        data: purchaseData
-      };
+      return { vbucksSpent: price * receivers.length };
     } catch (error) {
-      if (error instanceof EpicAPIError && MCP.isPriceMismatchError(error) && !isPriceRetry) {
+      if (MCP.isPriceMismatchError(error) && !isPriceRetry) {
         const newPrice = Number.parseInt(error.messageVars[1]);
         if (newPrice > price) throw error;
 
@@ -105,8 +93,9 @@ export class MCP {
     }
   }
 
-  private static isPriceMismatchError(error: EpicAPIError) {
+  private static isPriceMismatchError(error: unknown): error is EpicAPIError {
     return (
+      error instanceof EpicAPIError &&
       error.errorCode === 'errors.com.epicgames.modules.gamesubcatalog.catalog_out_of_date' &&
       error.errorMessage.toLowerCase().includes('did not match actual price') &&
       !Number.isNaN(Number.parseInt(error.messageVars[1]))

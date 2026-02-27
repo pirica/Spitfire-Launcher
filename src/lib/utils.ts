@@ -133,7 +133,7 @@ export async function processChunks<T, R>(
   return processedResults;
 }
 
-export function getAccountsFromSelection(selection: string[]) {
+export function getAccountsFromSelection(selection: string[]): AccountData[] {
   const { accounts } = accountStore.get();
   return selection.map((id) => accounts.find((account) => account.accountId === id)).filter((x) => !!x);
 }

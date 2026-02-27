@@ -94,7 +94,7 @@
     if (event.key === 'F5') {
       event.preventDefault();
       isRefreshing = true;
-      Legendary.cacheApps(true).finally(() => {
+      Legendary.cacheApps().finally(() => {
         isRefreshing = false;
       });
     }

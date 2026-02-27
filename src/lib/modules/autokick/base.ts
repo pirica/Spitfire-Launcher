@@ -31,12 +31,12 @@ export class AutoKickBase {
           return;
         }
 
-        await AutoKickBase.addAccount(account, automationAccount, false);
+        await AutoKickBase.addAccount(account, automationAccount);
       })
     );
   }
 
-  static async addAccount(account: AccountData, settings: AutomationAccount['settings'] = {}, writeToFile = true) {
+  static async addAccount(account: AccountData, settings: AutomationAccount['settings'] = {}) {
     if (AutoKickBase.accounts.has(account.accountId)) return;
 
     const data: AutomationAccount = {
@@ -46,7 +46,7 @@ export class AutoKickBase {
     };
 
     AutoKickBase.accounts.set(account.accountId, data);
-    AutoKickBase.updateSettings(account.accountId, settings, writeToFile);
+    AutoKickBase.updateSettings(account.accountId, settings);
 
     const manager = await AutoKickManager.new(account);
     AutoKickBase.accounts.set(account.accountId, {
@@ -58,19 +58,10 @@ export class AutoKickBase {
   static removeAccount(accountId: string) {
     AutoKickBase.accounts.get(accountId)?.manager?.destroy();
     AutoKickBase.accounts.delete(accountId);
-
-    automationStore.set(() =>
-      AutoKickBase.accounts
-        .values()
-        .toArray()
-        .map((x) => ({
-          accountId: x.account.accountId,
-          ...x.settings
-        }))
-    );
+    AutoKickBase.saveSettings();
   }
 
-  static updateSettings(accountId: string, settings: Partial<AutomationSetting>, writeToFile = true) {
+  static updateSettings(accountId: string, settings: Partial<AutomationSetting>) {
     const account = AutoKickBase.accounts.get(accountId);
     if (!account) return;
 
@@ -82,17 +73,7 @@ export class AutoKickBase {
       }
     });
 
-    if (writeToFile) {
-      automationStore.set(() =>
-        AutoKickBase.accounts
-          .values()
-          .toArray()
-          .map((x) => ({
-            accountId: x.account.accountId,
-            ...x.settings
-          }))
-      );
-    }
+    AutoKickBase.saveSettings();
   }
 
   static updateStatus(accountId: string, status: AutomationAccount['status']) {
@@ -103,5 +84,17 @@ export class AutoKickBase {
       ...account,
       status
     });
+  }
+
+  private static saveSettings() {
+    automationStore.set(() =>
+      AutoKickBase.accounts
+        .values()
+        .map((x) => ({
+          accountId: x.account.accountId,
+          ...x.settings
+        }))
+        .toArray()
+    );
   }
 }

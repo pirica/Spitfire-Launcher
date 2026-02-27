@@ -16,14 +16,14 @@
     <HelpCircleIcon class="size-6 text-muted-foreground transition-colors hover:text-foreground" />
   </Dialog.Trigger>
 
-  <Dialog.Content>
+  <Dialog.Content class="md:min-w-xl">
     {#if title}
       <Dialog.Header>
         <Dialog.Title>{title}</Dialog.Title>
       </Dialog.Header>
     {/if}
 
-    <div class="prose prose-sm dark:prose-invert">
+    <div class="prose prose-sm max-w-full dark:prose-invert">
       {@render children()}
     </div>
   </Dialog.Content>

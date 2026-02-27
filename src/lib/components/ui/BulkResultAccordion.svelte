@@ -16,7 +16,7 @@
   {#each states as state, index (index.toString())}
     <Accordion.Item value="item-{index}">
       <Accordion.Trigger
-        class="flex items-center justify-between rounded-lg bg-accent px-3 py-2 data-[state=open]:rounded-b-none"
+        class="flex items-center justify-between rounded-lg bg-secondary px-3 py-2 data-[state=open]:rounded-b-none"
       >
         <div class="flex items-center gap-2">
           <img

@@ -65,33 +65,29 @@ export class Friends {
       return data;
     } catch (error) {
       if (error instanceof EpicAPIError) {
-        switch (error.errorCode) {
-          case 'errors.com.epicgames.friends.duplicate_friendship': {
-            const friend = friendsStore.get(account.accountId)?.friends.get(friendId);
-            if (!friend) {
-              FriendsStore.set(account.accountId, 'friends', friendId, {
-                accountId: friendId,
-                alias: '',
-                note: '',
-                favorite: false,
-                created: new Date().toISOString(),
-                mutual: 0
-              });
-            }
-            break;
+        if (error.errorCode === 'errors.com.epicgames.friends.duplicate_friendship') {
+          const friend = friendsStore.get(account.accountId)?.friends.get(friendId);
+          if (!friend) {
+            FriendsStore.set(account.accountId, 'friends', friendId, {
+              accountId: friendId,
+              alias: '',
+              note: '',
+              favorite: false,
+              created: new Date().toISOString(),
+              mutual: 0
+            });
           }
+        }
 
-          case 'errors.com.epicgames.friends.friend_request_already_sent': {
-            const outgoing = friendsStore.get(account.accountId)?.outgoing.get(friendId);
-            if (!outgoing) {
-              FriendsStore.set(account.accountId, 'outgoing', friendId, {
-                accountId: friendId,
-                mutual: 0,
-                favorite: false,
-                created: new Date().toISOString()
-              });
-            }
-            break;
+        if (error.errorCode === 'errors.com.epicgames.friends.friend_request_already_sent') {
+          const outgoing = friendsStore.get(account.accountId)?.outgoing.get(friendId);
+          if (!outgoing) {
+            FriendsStore.set(account.accountId, 'outgoing', friendId, {
+              accountId: friendId,
+              mutual: 0,
+              favorite: false,
+              created: new Date().toISOString()
+            });
           }
         }
       }
@@ -161,6 +157,7 @@ export class Friends {
     const data = await AuthSession.ky(account, friendService)
       .get<IncomingFriendRequestData[]>(`${account.accountId}/incoming`)
       .json();
+
     FriendsStore.replace(account.accountId, 'incoming', data);
     return data;
   }
@@ -169,6 +166,7 @@ export class Friends {
     const data = await AuthSession.ky(account, friendService)
       .get<OutgoingFriendRequestData[]>(`${account.accountId}/outgoing`)
       .json();
+
     FriendsStore.replace(account.accountId, 'outgoing', data);
     return data;
   }
@@ -228,14 +226,12 @@ export class Friends {
     return data;
   }
 
-  static async acceptAllIncomingRequests(account: AccountData, accountIds: string[]) {
+  static async acceptIncomingMulti(account: AccountData, accountIds: string[]) {
     const MAX_IDS_PER_REQUEST = 100;
     const session = AuthSession.ky(account, friendService);
 
-    const acceptedRequests = new Set(
-      await processChunks(accountIds, MAX_IDS_PER_REQUEST, async (ids) =>
-        session.post<string[]>(`${account.accountId}/incoming/accept?targetIds=${ids.join(',')}`, { json: {} }).json()
-      )
+    const acceptedRequests = await processChunks(accountIds, MAX_IDS_PER_REQUEST, async (ids) =>
+      session.post<string[]>(`${account.accountId}/incoming/accept?targetIds=${ids.join(',')}`, { json: {} }).json()
     );
 
     for (const friendId of acceptedRequests) {

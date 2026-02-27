@@ -47,7 +47,8 @@ export class AccountStore extends FileStore<AccountDataFile> {
 
   getActive() {
     const data = this.get();
-    return data.accounts.find((x) => x.accountId === data.activeAccountId) || null;
+    if (!data.activeAccountId) return null;
+    return this.getAccount(data.activeAccountId);
   }
 
   // The nullable parameter is useful when the component is behind authentication

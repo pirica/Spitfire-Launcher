@@ -1,4 +1,4 @@
-import { missions, theaters } from '$lib/constants/stw/resources';
+import { missions, theaters } from '$lib/data';
 import { language, t } from '$lib/i18n';
 import { derived } from 'svelte/store';
 
