@@ -3,14 +3,13 @@
   import { gadgets, heroes, teamPerks } from '$lib/data';
   import { FounderEditions } from '$lib/constants/stw/resources';
 
-  type FounderEditions = (typeof FounderEditions)[keyof typeof FounderEditions];
-
+  type FounderEdition = (typeof FounderEditions)[keyof typeof FounderEditions];
   type STWData = {
     commanderLevel: {
       current: number;
       pastMaximum: number;
     };
-    founderEdition: FounderEditions | null;
+    founderEdition: FounderEdition | null;
     xpBoosts: {
       boostedXp: number;
       boostAmount: number;
@@ -163,7 +162,7 @@
     loadoutData = loadoutData.sort((a, b) => a.index - b.index);
   }
 
-  function getFounderEdition(items: ProfileItem[]): FounderEditions | null {
+  function getFounderEdition(items: ProfileItem[]): FounderEdition | null {
     const editions = Object.entries(FounderEditions).toReversed();
 
     for (const [, templateId] of editions) {

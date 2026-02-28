@@ -31,6 +31,7 @@
   import { on } from 'svelte/events';
   import { get } from 'svelte/store';
   import { afterNavigate } from '$app/navigation';
+  import { getCurrentWindow } from '@tauri-apps/api/window';
 
   const { children } = $props();
 
@@ -219,6 +220,9 @@
         })
       )
     ]);
+
+    // Window is hidden by default to prevent white flash on startup
+    getCurrentWindow().show();
   });
 </script>
 
