@@ -49,32 +49,32 @@
   const partyMembers = $derived<PartyMember[] | undefined>(
     currentAccountParty?.members
       .map((member) => {
-        const athenaCosmeticLoadout = parseJSON(member.meta['Default:AthenaCosmeticLoadout_j'])?.AthenaCosmeticLoadout;
-        const packedState = parseJSON(member.meta['Default:PackedState_j']?.replaceAll('True', 'true'));
-        const lobbyState = parseJSON(member.meta['Default:LobbyState_j']);
-        const battlePass = parseJSON(member.meta['Default:BattlePassInfo_j']);
+        const mpLoadout = parseJSON(member.meta['Default:MpLoadout1_j'])?.MpLoadout1.s;
+        const packedState = parseJSON(member.meta['Default:PackedState_j']?.replaceAll('True', 'true'))?.PackedState;
+        const matchmakingInfo = parseJSON(member.meta['Default:MatchmakingInfo_j'])?.MatchmakingInfo;
+        const battlePass = parseJSON(member.meta['Default:BattlePassInfo_j'])?.BattlePassInfo;
+        const loadoutMeta = parseJSON(member.meta['Default:LoadoutMeta_j'])?.LoadoutMeta;
 
         return {
           accountId: member.account_id,
           displayName: member.meta['urn:epic:member:dn_s'] || '???',
           platformSpecificName: member.connections[0]?.meta['account_pl_dn'],
-          avatarUrl: getSmallIcon(athenaCosmeticLoadout?.characterPrimaryAssetId, ':'),
+          avatarUrl: getSmallIcon(mpLoadout?.ac?.i),
           platform: member.connections[0]?.meta['urn:epic:conn:platform_s'],
-          ownsSaveTheWorld: packedState?.PackedState?.hasPurchasedSTW || false,
-          isReady: lobbyState?.LobbyState?.gameReadiness === 'Ready',
+          ownsSaveTheWorld: packedState?.hasPurchasedSTW || false,
+          isReady: matchmakingInfo?.readyStatus === 'Ready',
           isLeader: member.role === 'CAPTAIN',
-          battlePassLevel: battlePass?.BattlePassInfo?.passLevel || 1,
-          crownedWins:
-            athenaCosmeticLoadout?.cosmeticStats?.find((x: any) => x.statName === 'TotalRoyalRoyales')?.value || 0,
+          battlePassLevel: battlePass?.passLevel || 1,
+          crownedWins: loadoutMeta?.stats?.find((x: any) => x.statName === 'TotalRoyalRoyales')?.value || 0,
           joinedAt: new Date(member.joined_at),
           loadout: [
             {
               type: 'outfit',
-              icon: getSmallIcon(athenaCosmeticLoadout?.characterPrimaryAssetId, ':')
+              icon: getSmallIcon(mpLoadout?.ac?.i)
             },
-            { type: 'backpack', icon: getSmallIcon(athenaCosmeticLoadout?.backpackDef) },
-            { type: 'pickaxe', icon: getSmallIcon(athenaCosmeticLoadout?.pickaxeDef) },
-            { type: 'contrail', icon: getSmallIcon(athenaCosmeticLoadout?.contrailDef) }
+            { type: 'backpack', icon: getSmallIcon(mpLoadout?.ab?.i) },
+            { type: 'pickaxe', icon: getSmallIcon(mpLoadout?.ap?.i) },
+            { type: 'glider', icon: getSmallIcon(mpLoadout?.ag?.i) }
           ].filter((x) => x.icon)
         };
       })
@@ -353,8 +353,8 @@
     }
   }
 
-  function getSmallIcon(id?: string, splitWith = '.') {
-    return id ? `https://fortnite-api.com/images/cosmetics/br/${id.split(splitWith)[1]}/smallicon.png` : '';
+  function getSmallIcon(id?: string) {
+    return id ? `https://fortnite-api.com/images/cosmetics/br/${id}/smallicon.png` : '';
   }
 
   $effect(() => {

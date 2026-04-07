@@ -447,7 +447,11 @@ export class XMPPManager extends EventEmitter<EventMap> {
     };
 
     for (const [accountId, party] of parties) {
-      party.members = [...party.members, newMember];
+      const alreadyPresent = party.members.some((m) => m.account_id === data.account_id);
+      if (!alreadyPresent) {
+        party.members = [...party.members, newMember];
+      }
+
       party.revision = data.revision;
       party.updated_at = data.updated_at || party.updated_at;
 
