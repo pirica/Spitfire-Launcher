@@ -1,10 +1,8 @@
 import { t } from '$lib/i18n';
 import { logger } from '$lib/logger';
 import { accountStore } from '$lib/storage';
-import { ownedItemsStore } from '$lib/stores';
 import type { AccountData } from '$types/account';
 import type { FullQueryProfile } from '$types/game/mcp';
-import type { SpitfireShopItem } from '$types/game/shop';
 import { type ClassValue, clsx } from 'clsx';
 import { toast } from 'svelte-sonner';
 import { get } from 'svelte/store';

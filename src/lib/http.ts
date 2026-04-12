@@ -37,7 +37,7 @@ export const tauriKy = ky.create({
 const manifest = await Manifest.getFortniteManifest().catch(() => null);
 const defaultUserAgent = manifest?.appVersionString
   ? `Fortnite/${manifest.appVersionString.replace('-Windows', '')} Windows/10.0.26100.1.256.64bit`
-  : 'Fortnite/++Fortnite+Release-39.50-CL-51043566 Windows/10.0.26100.1.256.64bit';
+  : 'Fortnite/++Fortnite+Release-40.10-CL-52157884 Windows/10.0.26100.1.256.64bit';
 
 let userAgent = defaultUserAgent;
 
@@ -48,46 +48,42 @@ settingsStore.subscribe((settings) => {
 export const epicService = tauriKy.extend({
   hooks: {
     beforeRequest: [
-      async (request) => {
+      async ({ request }) => {
         if (!request.headers.has('X-User-Agent')) {
           request.headers.set('X-User-Agent', userAgent);
         }
       }
     ],
     beforeError: [
-      async (error) => {
-        if (!isHTTPError(error)) return error;
-
-        const data = await error.response.json();
-        if (!isEpicAPIError(data)) return error;
-
-        throw new EpicAPIError(data);
+      async ({ error }) => {
+        if (!isHTTPError(error) || !isEpicAPIError(error.data)) return error;
+        return new EpicAPIError(error.data);
       }
     ]
   }
 });
 
 export const baseGameService = epicService.extend({
-  prefixUrl: 'https://fngw-mcp-gc-livefn.ol.epicgames.com/fortnite/api/game/v2'
+  prefix: 'https://fngw-mcp-gc-livefn.ol.epicgames.com/fortnite/api/game/v2'
 });
 
 export const friendService = epicService.extend({
-  prefixUrl: 'https://friends-public-service-prod.ol.epicgames.com/friends/api/v1'
+  prefix: 'https://friends-public-service-prod.ol.epicgames.com/friends/api/v1'
 });
 
 export const fulfillmentService = epicService.extend({
-  prefixUrl: 'https://fulfillment-public-service-prod.ol.epicgames.com/fulfillment/api/public'
+  prefix: 'https://fulfillment-public-service-prod.ol.epicgames.com/fulfillment/api/public'
 });
 
 export const lightswitchService = epicService.extend({
-  prefixUrl: 'https://lightswitch-public-service-prod.ol.epicgames.com/lightswitch/api/service'
+  prefix: 'https://lightswitch-public-service-prod.ol.epicgames.com/lightswitch/api/service'
 });
 
 export const oauthService = epicService.extend({
-  prefixUrl: 'https://account-public-service-prod.ol.epicgames.com/account/api/oauth',
+  prefix: 'https://account-public-service-prod.ol.epicgames.com/account/api/oauth',
   hooks: {
     beforeRequest: [
-      async (request) => {
+      async ({ request }) => {
         if (!request.headers.has('Authorization')) {
           request.headers.set('Authorization', `Basic ${defaultClient.base64}`);
         }
@@ -99,36 +95,36 @@ export const oauthService = epicService.extend({
 });
 
 export const partyService = epicService.extend({
-  prefixUrl: 'https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite'
+  prefix: 'https://party-service-prod.ol.epicgames.com/party/api/v1/Fortnite'
 });
 
 export const publicAccountService = epicService.extend({
-  prefixUrl: 'https://account-public-service-prod.ol.epicgames.com/account/api/public/account'
+  prefix: 'https://account-public-service-prod.ol.epicgames.com/account/api/public/account'
 });
 
 export const eulaService = epicService.extend({
-  prefixUrl: 'https://eulatracking-public-service-prod.ol.epicgames.com/eulatracking/api/public/agreements/fn'
+  prefix: 'https://eulatracking-public-service-prod.ol.epicgames.com/eulatracking/api/public/agreements/fn'
 });
 
 export const userSearchService = epicService.extend({
-  prefixUrl: 'https://user-search-service-prod.ol.epicgames.com/api/v1/search'
+  prefix: 'https://user-search-service-prod.ol.epicgames.com/api/v1/search'
 });
 
 export const avatarService = epicService.extend({
-  prefixUrl: 'https://avatar-service-prod.identity.live.on.epicgames.com/v1/avatar/fortnite'
+  prefix: 'https://avatar-service-prod.identity.live.on.epicgames.com/v1/avatar/fortnite'
 });
 
 const launcherUA = `SpitfireLauncher/${await getVersion()} (${platform()}; ${arch()})`;
 
 export const spitfireService = tauriKy.extend({
-  prefixUrl: 'https://api.rookie-spitfire.xyz',
+  prefix: 'https://api.rookie-spitfire.xyz',
   headers: {
     'X-User-Agent': launcherUA
   }
 });
 
 export const legendaryService = tauriKy.extend({
-  prefixUrl: 'https://api.legendary.gl',
+  prefix: 'https://api.legendary.gl',
   headers: {
     'X-User-Agent': launcherUA
   }

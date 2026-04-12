@@ -7,6 +7,7 @@
   import type { MCPOperation, MCPProfileId, MCPRoute } from '$types/game/mcp';
   import Prism from 'prismjs';
   import 'prismjs/components/prism-json';
+  import 'prismjs/components/prism-json5';
   import { Label } from '$components/ui/label';
   import { platform } from '@tauri-apps/plugin-os';
   import { MCP } from '$lib/modules/mcp';
@@ -17,6 +18,7 @@
   import CopyIcon from '@lucide/svelte/icons/copy';
   import CheckIcon from '@lucide/svelte/icons/check';
   import JsonNode from '$components/modules/mcp/JsonNode.svelte';
+  import JSON5 from 'json5';
   import { writeText } from '@tauri-apps/plugin-clipboard-manager';
 
   const activeAccount = accountStore.getActiveStore();
@@ -47,14 +49,14 @@
   let isLoading = $state(false);
   let copied = $state(false);
 
-  const highlighted = $derived(Prism.highlight(body, Prism.languages.json, 'json'));
+  const highlighted = $derived(Prism.highlight(body, Prism.languages.json5, 'json5'));
   const formatShortcut = platform() === 'macos' ? '⌘⇧F' : 'Ctrl+Shift+F';
 
   const resultParsed = $derived.by(() => {
     if (!result) return null;
 
     try {
-      return JSON.parse(result);
+      return JSON5.parse(result);
     } catch {
       return null;
     }
@@ -62,7 +64,7 @@
 
   function reformat() {
     try {
-      body = JSON.stringify(JSON.parse(body), null, 2);
+      body = JSON5.stringify(JSON5.parse(body), null, 2);
     } catch {
       /* empty */
     }
@@ -78,7 +80,7 @@
   async function copyResult() {
     if (!result || copied) return;
 
-    await writeText(resultParsed ? JSON.stringify(resultParsed, null, 2) : result);
+    await writeText(resultParsed ? JSON5.stringify(resultParsed, null, 2) : result);
     copied = true;
     setTimeout(() => (copied = false), 2000);
   }
@@ -88,7 +90,7 @@
 
     let bodyJson: Record<string, any>;
     try {
-      bodyJson = JSON.parse(body);
+      bodyJson = JSON5.parse(body);
     } catch {
       toast.error($t('mcp.invalidBody'));
       return;
@@ -251,5 +253,9 @@
   }
   :global(.token.operator) {
     color: #ccc;
+  }
+  :global(.token.comment) {
+    color: #999988;
+    font-style: italic;
   }
 </style>
