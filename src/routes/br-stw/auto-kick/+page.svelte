@@ -4,7 +4,12 @@
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import { platform } from '@tauri-apps/plugin-os';
   import { t } from '$lib/i18n';
-  import { AutoKickBase } from '$lib/modules/autokick/base';
+  import {
+    addAutoKickAccount,
+    autoKickAccounts,
+    removeAutoKickAccount,
+    updateAutoKickSettings
+  } from '$lib/modules/autokick/base';
   import { accountStore } from '$lib/storage';
   import { cn } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -18,16 +23,16 @@
   type AutomationSetting = keyof Omit<AutomationSettingWithId, 'accountId'>;
 
   const allAccounts = $derived($accountStore.accounts);
-  const autoKickDisabledAccounts = $derived(allAccounts.filter((x) => !AutoKickBase.accounts.has(x.accountId)));
+  const autoKickDisabledAccounts = $derived(allAccounts.filter((x) => !autoKickAccounts.has(x.accountId)));
 
   function handleAccountSelect(accountId: string) {
     if (!accountId) return;
 
-    const isAlreadyAdded = AutoKickBase.accounts.has(accountId);
+    const isAlreadyAdded = autoKickAccounts.has(accountId);
     if (isAlreadyAdded) return;
 
     const account = allAccounts.find((x) => x.accountId === accountId)!;
-    AutoKickBase.addAccount(account, {
+    addAutoKickAccount(account, {
       autoKick: true
     });
   }
@@ -86,9 +91,9 @@
     type="single"
   />
 
-  {#if AutoKickBase.accounts.size}
+  {#if autoKickAccounts.size}
     <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 xl-plus:grid-cols-4 2xl:grid-cols-5">
-      {#each AutoKickBase.accounts as [accountId, automationAccount] (accountId)}
+      {#each autoKickAccounts as [accountId, automationAccount] (accountId)}
         {@const isLoading = automationAccount.status === 'LOADING'}
 
         <div class="size-full rounded-md border bg-card">
@@ -111,7 +116,7 @@
             <Button
               class="flex size-8 items-center justify-center hover:bg-muted-foreground/50 hover:text-destructive"
               disabled={isLoading}
-              onclick={() => AutoKickBase.removeAccount(accountId)}
+              onclick={() => removeAutoKickAccount(accountId)}
               size="sm"
               variant="ghost"
             >
@@ -131,7 +136,7 @@
                   id={setting.id}
                   checked={automationAccount.settings[setting.id]}
                   disabled={isLoading || (setting.id === 'autoInvite' && !automationAccount.settings.autoKick)}
-                  onCheckedChange={(checked) => AutoKickBase.updateSettings(accountId, { [setting.id]: checked })}
+                  onCheckedChange={(checked) => updateAutoKickSettings(accountId, { [setting.id]: checked })}
                 />
               </div>
             {/each}

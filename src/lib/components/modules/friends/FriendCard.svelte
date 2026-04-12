@@ -9,7 +9,7 @@
   import UserPlusIcon from '@lucide/svelte/icons/user-plus';
   import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { t } from '$lib/i18n';
-  import { Friends } from '$lib/modules/friends';
+  import { addFriend, block, removeFriend, unblock } from '$lib/modules/friends';
   import { XMPPManager, type FriendPresence } from '$lib/modules/xmpp';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
@@ -41,7 +41,7 @@
     isAdding = true;
 
     try {
-      await Friends.addFriend($activeAccount, id);
+      await addFriend($activeAccount, id);
     } catch (error) {
       handleError({ error, message: $t('friendsManagement.failedToAdd'), account: $activeAccount });
     } finally {
@@ -53,7 +53,7 @@
     isRemoving = true;
 
     try {
-      await Friends.removeFriend($activeAccount, id);
+      await removeFriend($activeAccount, id);
     } catch (error) {
       handleError({ error, message: $t('friendsManagement.failedToRemove'), account: $activeAccount });
     } finally {
@@ -65,7 +65,7 @@
     isBlocking = true;
 
     try {
-      await Friends.block($activeAccount, id);
+      await block($activeAccount, id);
     } catch (error) {
       handleError({ error, message: $t('friendsManagement.failedToBlock'), account: $activeAccount });
     } finally {
@@ -77,7 +77,7 @@
     isUnblocking = true;
 
     try {
-      await Friends.unblock($activeAccount, id);
+      await unblock($activeAccount, id);
     } catch (error) {
       handleError({ error, message: $t('friendsManagement.failedToUnblock'), account: $activeAccount });
     } finally {

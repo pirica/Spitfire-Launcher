@@ -4,7 +4,7 @@
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { language, t } from '$lib/i18n';
-  import { MCP } from '$lib/modules/mcp';
+  import { giftCatalogEntry } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
   import { accountDataCache } from '$lib/stores';
   import AccountCombobox from '$components/ui/AccountCombobox.svelte';
@@ -33,7 +33,7 @@
     isSendingGifts = true;
 
     try {
-      const giftData = await MCP.giftCatalogEntry($activeAccount, item.offerId, selectedFriends, item.price.final);
+      const giftData = await giftCatalogEntry($activeAccount, item.offerId, selectedFriends, item.price.final);
       accountDataCache.set($activeAccount.accountId, {
         remainingGifts: remainingGifts - selectedFriends.length,
         vbucks: ownedVbucks - giftData.vbucksSpent,
@@ -109,7 +109,7 @@
         {$t('itemShop.giftConfirmation.title')}
       </Dialog.Title>
 
-      <Dialog.Description class="flex flex-wrap items-center gap-1 break-words whitespace-normal">
+      <Dialog.Description class="flex flex-wrap items-center gap-1 wrap-break-word whitespace-normal">
         {@html $t('itemShop.giftConfirmation.description', {
           name: `<span class="font-semibold">${item.name}</span>`,
           price: `<span class="font-semibold">${(item.price.final * (selectedFriends.length || 1)).toLocaleString($language)}</span>`,

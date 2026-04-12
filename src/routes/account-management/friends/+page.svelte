@@ -9,8 +9,8 @@
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import UserPlusIcon from '@lucide/svelte/icons/user-plus';
   import { t } from '$lib/i18n';
-  import { Friends } from '$lib/modules/friends';
-  import { Lookup } from '$lib/modules/lookup';
+  import { addFriend, getFriendsSummary } from '$lib/modules/friends';
+  import { fetchUserByNameOrId } from '$lib/modules/lookup';
   import { XMPPManager } from '$lib/modules/xmpp';
   import { accountStore } from '$lib/storage';
   import { friendsCache } from '$lib/stores';
@@ -59,10 +59,10 @@
     isSendingRequest = true;
 
     try {
-      const lookupData = await Lookup.fetchByNameOrId($activeAccount, searchQuery);
+      const lookupData = await fetchUserByNameOrId($activeAccount, searchQuery);
 
       try {
-        await Friends.addFriend($activeAccount, lookupData.accountId);
+        await addFriend($activeAccount, lookupData.accountId);
         searchQuery = '';
         toast.success($t('friendsManagement.sentFriendRequest'));
       } catch (error) {
@@ -86,7 +86,7 @@
       }
     });
 
-    Friends.getSummary($activeAccount).finally(() => {
+    getFriendsSummary($activeAccount).finally(() => {
       isLoading = false;
     });
 
@@ -101,7 +101,7 @@
     if (event.key === 'F5') {
       event.preventDefault();
       isLoading = true;
-      Friends.getSummary($activeAccount).finally(() => {
+      getFriendsSummary($activeAccount).finally(() => {
         isLoading = false;
       });
     }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { debounce } from '$lib/debounce';
-  import { Lookup } from '$lib/modules/lookup';
+  import { searchUsersByName } from '$lib/modules/lookup';
   import { accountStore } from '$lib/storage';
   import { avatarCache, displayNameCache } from '$lib/stores';
   import * as DropdownMenu from '$components/ui/dropdown-menu';
@@ -16,7 +16,7 @@
 
   const debouncedSearch = debounce(async (search: string) => {
     if (!$activeAccount || !search || search.length < 3) return;
-    await Lookup.searchByName($activeAccount, search);
+    await searchUsersByName($activeAccount, search);
   }, 500);
 
   const autocompleteData = $derived.by(() => {

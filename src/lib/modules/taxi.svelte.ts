@@ -4,8 +4,8 @@ import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import homebaseRatingMapping from '$lib/data/homebase-rating-mapping.json';
 import { t } from '$lib/i18n';
 import { getChildLogger } from '$lib/logger';
-import { Friends } from '$lib/modules/friends';
-import { Party } from '$lib/modules/party';
+import { acceptIncomingMulti, addFriend, getIncoming } from '$lib/modules/friends';
+import { acceptInvite, getInviterParty, getParty, leaveParty, patchSelf } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { partyCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
@@ -78,7 +78,7 @@ export class TaxiManager {
 
       this.setIsAvailable(true);
 
-      await Party.get(this.account);
+      await getParty(this.account);
 
       this.active = true;
       TaxiManager.taxiAccountIds.add(this.account.accountId);
@@ -111,7 +111,7 @@ export class TaxiManager {
 
     const currentParty = partyCache.get(this.account.accountId);
     if (currentParty) {
-      void (await Party.leave(this.account, currentParty.id));
+      void (await leaveParty(this.account, currentParty.id));
       partyCache.delete(this.account.accountId);
     }
   }
@@ -119,14 +119,14 @@ export class TaxiManager {
   async handleFriendRequests() {
     if (!this.active || !this.autoAcceptFriendRequests) return;
 
-    const incomingRequests = await Friends.getIncoming(this.account);
+    const incomingRequests = await getIncoming(this.account);
     if (incomingRequests.length) {
       logger.debug('Accepting all incoming friend requests', {
         accountId: this.account.accountId,
         count: incomingRequests.length
       });
 
-      await Friends.acceptIncomingMulti(
+      await acceptIncomingMulti(
         this.account,
         incomingRequests.map((x) => x.accountId)
       );
@@ -149,7 +149,7 @@ export class TaxiManager {
 
   setPowerLevel(partyId: string, revision: number) {
     logger.debug('Setting power level', { accountId: this.account.accountId, partyId, level: this.level });
-    return Party.patchSelf(this.account, partyId, revision, this.getUpdatePayload());
+    return patchSelf(this.account, partyId, revision, this.getUpdatePayload());
   }
 
   private async handleInvite(invite: EpicEventPartyPing) {
@@ -157,19 +157,19 @@ export class TaxiManager {
 
     const currentParty = partyCache.get(this.account.accountId);
     if (currentParty?.members.length === 1) {
-      await Party.leave(this.account, currentParty.id);
+      await leaveParty(this.account, currentParty.id);
       partyCache.delete(this.account.accountId);
     }
 
-    const [inviterPartyData] = await Party.getInviterParty(this.account, invite.pinger_id);
-    await Party.acceptInvite(
+    const [inviterPartyData] = await getInviterParty(this.account, invite.pinger_id);
+    await acceptInvite(
       this.account,
       inviterPartyData.id,
       invite.pinger_id,
       this.xmpp!.connection!.jid,
       this.getUpdatePayload()
     );
-    await Party.get(this.account);
+    await getParty(this.account);
 
     this.setIsAvailable(false);
   }
@@ -193,7 +193,7 @@ export class TaxiManager {
       )?.PackedState;
 
       if (packedState?.location === 'Lobby') {
-        Party.leave(this.account, event.party_id);
+        leaveParty(this.account, event.party_id);
         return;
       }
     }
@@ -210,7 +210,7 @@ export class TaxiManager {
         partyId: data.party_id
       });
 
-      await Party.leave(this.account, data.party_id);
+      await leaveParty(this.account, data.party_id);
     }
   }
 
@@ -218,7 +218,7 @@ export class TaxiManager {
     if (!this.autoAcceptFriendRequests || request.status !== 'PENDING') return;
 
     logger.debug('Accepting friend request', { accountId: this.account.accountId, from: request.from });
-    await Friends.addFriend(this.account, request.from);
+    await addFriend(this.account, request.from);
   }
 
   private getUpdatePayload() {

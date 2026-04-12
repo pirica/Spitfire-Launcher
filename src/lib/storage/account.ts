@@ -87,23 +87,24 @@ export class AccountStore extends FileStore<AccountDataFile> {
   }
 
   private async cleanupAccount(account: AccountData) {
-    const [{ AutoKickBase }, { XMPPManager }, { DeviceAuth }, { Legendary }] = await Promise.all([
-      import('$lib/modules/autokick/base'),
-      import('$lib/modules/xmpp'),
-      import('$lib/modules/device-auth'),
-      import('$lib/modules/legendary')
-    ]);
+    const [{ removeAutoKickAccount }, { XMPPManager }, { deleteDeviceAuth }, { getLegendaryAccount, logoutLegendary }] =
+      await Promise.all([
+        import('$lib/modules/autokick/base'),
+        import('$lib/modules/xmpp'),
+        import('$lib/modules/device-auth'),
+        import('$lib/modules/legendary')
+      ]);
 
-    AutoKickBase.removeAccount(account.accountId);
+    removeAutoKickAccount(account.accountId);
     XMPPManager.instances.get(account.accountId)?.disconnect();
 
-    DeviceAuth.delete(account, account.deviceId).catch((error) => {
+    deleteDeviceAuth(account, account.deviceId).catch((error) => {
       logger.error('Failed to delete device auth', { error });
     });
 
-    Legendary.getAccount().then((legAccount) => {
+    getLegendaryAccount().then((legAccount) => {
       if (legAccount === account.accountId) {
-        Legendary.logout().catch((error) => {
+        logoutLegendary().catch((error) => {
           logger.error('Failed to logout from Legendary', { error });
         });
       }

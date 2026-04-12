@@ -17,7 +17,7 @@
 <script lang="ts">
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { t } from '$lib/i18n';
-  import { Code } from '$lib/modules/code';
+  import { redeemCode } from '$lib/modules/code';
   import { getAccountsFromSelection, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
   import AccountCombobox from '$components/ui/AccountCombobox.svelte';
@@ -62,7 +62,7 @@
             }
 
             try {
-              await Code.redeem(account, code);
+              await redeemCode(account, code);
               state.data.push({ code });
             } catch (error) {
               handleError({ error, message: 'Failed to redeem code', account, toastId: false });

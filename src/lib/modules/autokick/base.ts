@@ -11,90 +11,88 @@ export type AutomationAccount = {
   manager?: AutoKickManager;
 };
 
-export class AutoKickBase {
-  static accounts = new SvelteMap<string, AutomationAccount>();
+export const autoKickAccounts = new SvelteMap<string, AutomationAccount>();
 
-  static async init() {
-    const accounts = automationStore.get();
-    if (!accounts?.length) return;
+export async function initAutoKick() {
+  const accounts = automationStore.get();
+  if (!accounts?.length) return;
 
-    const userAccounts = accountStore.get().accounts;
-    await Promise.allSettled(
-      accounts.map(async (automationAccount) => {
-        const account = userAccounts.find((a) => a.accountId === automationAccount.accountId);
-        const isAnySettingEnabled = Object.entries(automationAccount)
-          .filter(([key]) => key !== 'accountId')
-          .some(([, value]) => value);
+  const userAccounts = accountStore.get().accounts;
+  await Promise.allSettled(
+    accounts.map(async (automationAccount) => {
+      const account = userAccounts.find((a) => a.accountId === automationAccount.accountId);
+      const isAnySettingEnabled = Object.entries(automationAccount)
+        .filter(([key]) => key !== 'accountId')
+        .some(([, value]) => value);
 
-        if (!account || !isAnySettingEnabled) {
-          automationStore.set((s) => s.filter((a) => a.accountId !== automationAccount.accountId));
-          return;
-        }
-
-        await AutoKickBase.addAccount(account, automationAccount);
-      })
-    );
-  }
-
-  static async addAccount(account: AccountData, settings: AutomationAccount['settings'] = {}) {
-    if (AutoKickBase.accounts.has(account.accountId)) return;
-
-    const data: AutomationAccount = {
-      status: 'LOADING',
-      account,
-      settings
-    };
-
-    AutoKickBase.accounts.set(account.accountId, data);
-    AutoKickBase.updateSettings(account.accountId, settings);
-
-    const manager = await AutoKickManager.new(account);
-    AutoKickBase.accounts.set(account.accountId, {
-      ...AutoKickBase.accounts.get(account.accountId)!,
-      manager
-    });
-  }
-
-  static removeAccount(accountId: string) {
-    AutoKickBase.accounts.get(accountId)?.manager?.destroy();
-    AutoKickBase.accounts.delete(accountId);
-    AutoKickBase.saveSettings();
-  }
-
-  static updateSettings(accountId: string, settings: Partial<AutomationSetting>) {
-    const account = AutoKickBase.accounts.get(accountId);
-    if (!account) return;
-
-    AutoKickBase.accounts.set(accountId, {
-      ...account,
-      settings: {
-        ...account.settings,
-        ...settings
+      if (!account || !isAnySettingEnabled) {
+        automationStore.set((s) => s.filter((a) => a.accountId !== automationAccount.accountId));
+        return;
       }
-    });
 
-    AutoKickBase.saveSettings();
-  }
+      await addAutoKickAccount(account, automationAccount);
+    })
+  );
+}
 
-  static updateStatus(accountId: string, status: AutomationAccount['status']) {
-    const account = AutoKickBase.accounts.get(accountId);
-    if (!account) return;
+export async function addAutoKickAccount(account: AccountData, settings: AutomationAccount['settings'] = {}) {
+  if (autoKickAccounts.has(account.accountId)) return;
 
-    AutoKickBase.accounts.set(accountId, {
-      ...account,
-      status
-    });
-  }
+  const data: AutomationAccount = {
+    status: 'LOADING',
+    account,
+    settings
+  };
 
-  private static saveSettings() {
-    automationStore.set(() =>
-      AutoKickBase.accounts
-        .values()
-        .map((x) => ({
-          accountId: x.account.accountId,
-          ...x.settings
-        }))
-        .toArray()
-    );
-  }
+  autoKickAccounts.set(account.accountId, data);
+  updateAutoKickSettings(account.accountId, settings);
+
+  const manager = await AutoKickManager.new(account);
+  autoKickAccounts.set(account.accountId, {
+    ...autoKickAccounts.get(account.accountId)!,
+    manager
+  });
+}
+
+export function removeAutoKickAccount(accountId: string) {
+  autoKickAccounts.get(accountId)?.manager?.destroy();
+  autoKickAccounts.delete(accountId);
+  saveSettings();
+}
+
+export function updateAutoKickSettings(accountId: string, settings: Partial<AutomationSetting>) {
+  const account = autoKickAccounts.get(accountId);
+  if (!account) return;
+
+  autoKickAccounts.set(accountId, {
+    ...account,
+    settings: {
+      ...account.settings,
+      ...settings
+    }
+  });
+
+  saveSettings();
+}
+
+export function updateAutoKickStatus(accountId: string, status: AutomationAccount['status']) {
+  const account = autoKickAccounts.get(accountId);
+  if (!account) return;
+
+  autoKickAccounts.set(accountId, {
+    ...account,
+    status
+  });
+}
+
+function saveSettings() {
+  automationStore.set(() =>
+    autoKickAccounts
+      .values()
+      .map((x) => ({
+        accountId: x.account.accountId,
+        ...x.settings
+      }))
+      .toArray()
+  );
 }

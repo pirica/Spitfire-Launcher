@@ -1,18 +1,16 @@
 import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 
-export class Notification {
-  static async requestPermission() {
-    if (await isPermissionGranted()) return true;
+export async function requestNotificationPermission() {
+  if (await isPermissionGranted()) return true;
 
-    const permission = await requestPermission();
-    return permission === 'granted';
-  }
+  const permission = await requestPermission();
+  return permission === 'granted';
+}
 
-  static async sendNotification(message: string, title = 'Spitfire Launcher') {
-    const permissionGranted = await this.requestPermission();
-    if (!permissionGranted) return false;
+export async function sendNotificationMessage(message: string, title = 'Spitfire Launcher') {
+  const permissionGranted = await requestNotificationPermission();
+  if (!permissionGranted) return false;
 
-    sendNotification({ title, body: message });
-    return true;
-  }
+  sendNotification({ title, body: message });
+  return true;
 }

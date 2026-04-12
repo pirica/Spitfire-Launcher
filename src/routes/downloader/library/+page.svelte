@@ -3,8 +3,8 @@
   import { toast } from 'svelte-sonner';
   import Fuse from 'fuse.js';
   import { t } from '$lib/i18n';
-  import { DownloadManager } from '$lib/modules/download.svelte';
-  import { Legendary } from '$lib/modules/legendary';
+  import { downloadingAppId, isInQueue } from '$lib/modules/download.svelte';
+  import { cacheLegendaryApps, getLegendaryAccount, loginLegendary } from '$lib/modules/legendary';
   import { accountStore, downloaderStore } from '$lib/storage';
   import { ownedAppsCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
@@ -51,11 +51,11 @@
       const installedA = a.installed ? 0 : 1;
       const installedB = b.installed ? 0 : 1;
 
-      const installingA = DownloadManager.downloadingAppId === a.id ? 0 : 1;
-      const installingB = DownloadManager.downloadingAppId === b.id ? 0 : 1;
+      const installingA = $downloadingAppId === a.id ? 0 : 1;
+      const installingB = $downloadingAppId === b.id ? 0 : 1;
 
-      const inQueueA = DownloadManager.isInQueue(a.id) ? 0 : 1;
-      const inQueueB = DownloadManager.isInQueue(b.id) ? 0 : 1;
+      const inQueueA = isInQueue(a.id) ? 0 : 1;
+      const inQueueB = isInQueue(b.id) ? 0 : 1;
 
       return (
         favoriteA - favoriteB ||
@@ -68,13 +68,13 @@
   });
 
   onMount(async () => {
-    const isLoggedIn = !!(await Legendary.getAccount());
+    const isLoggedIn = !!(await getLegendaryAccount());
     if (!isLoggedIn) {
       const toastId = toast.loading($t('library.loggingIn'), { duration: Number.POSITIVE_INFINITY });
 
       try {
-        await Legendary.login(accountStore.getActive()!);
-        await Legendary.cacheApps();
+        await loginLegendary(accountStore.getActive()!);
+        await cacheLegendaryApps();
         toast.success($t('library.loggedIn'), { id: toastId, duration: 3000 });
       } catch (error) {
         handleError({ error, message: $t('library.failedToLogin'), toastId });
@@ -89,7 +89,7 @@
     if (event.key === 'F5') {
       event.preventDefault();
       ownedAppsCache.set([]);
-      Legendary.cacheApps();
+      cacheLegendaryApps();
     }
   }}
 />

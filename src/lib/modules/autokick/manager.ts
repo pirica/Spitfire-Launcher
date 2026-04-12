@@ -1,11 +1,11 @@
 import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import { getChildLogger } from '$lib/logger';
-import { AutoKickBase } from '$lib/modules/autokick/base';
+import { autoKickAccounts, updateAutoKickStatus } from '$lib/modules/autokick/base';
 import { claimRewards } from '$lib/modules/autokick/claim-rewards';
 import { transferBuildingMaterials } from '$lib/modules/autokick/transfer-building-materials';
-import { Friends } from '$lib/modules/friends';
-import { MCP } from '$lib/modules/mcp';
-import { Party } from '$lib/modules/party';
+import { getFriends } from '$lib/modules/friends';
+import { queryProfile } from '$lib/modules/mcp';
+import { getParty, invite, kickParty, leaveParty } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { accountStore, settingsStore } from '$lib/storage';
 import { partyCache } from '$lib/stores';
@@ -32,13 +32,13 @@ export class AutoKickManager {
 
   static async new(account: AccountData) {
     const accountId = account.accountId;
-    AutoKickBase.updateStatus(accountId, 'LOADING');
+    updateAutoKickStatus(accountId, 'LOADING');
 
     let xmpp: XMPPManager;
     try {
       xmpp = await XMPPManager.new(account, 'autoKick');
     } catch (error) {
-      AutoKickBase.updateStatus(accountId, 'INVALID_CREDENTIALS');
+      updateAutoKickStatus(accountId, 'INVALID_CREDENTIALS');
       throw error;
     }
 
@@ -48,7 +48,7 @@ export class AutoKickManager {
     xmpp.on(
       ConnectionEvents.SessionStarted,
       async () => {
-        AutoKickBase.updateStatus(accountId, 'ACTIVE');
+        updateAutoKickStatus(accountId, 'ACTIVE');
 
         const state = await manager.checkState();
         manager.currentState = state;
@@ -69,7 +69,7 @@ export class AutoKickManager {
     xmpp.on(
       ConnectionEvents.Disconnected,
       () => {
-        AutoKickBase.updateStatus(accountId, 'DISCONNECTED');
+        updateAutoKickStatus(accountId, 'DISCONNECTED');
         manager.resetState();
       },
       { signal }
@@ -118,10 +118,10 @@ export class AutoKickManager {
 
     try {
       await xmpp.connect();
-      AutoKickBase.updateStatus(accountId, 'ACTIVE');
+      updateAutoKickStatus(accountId, 'ACTIVE');
     } catch (error) {
       logger.error('XMPP connection failed', { accountId, error });
-      AutoKickBase.updateStatus(accountId, 'DISCONNECTED');
+      updateAutoKickStatus(accountId, 'DISCONNECTED');
     }
 
     return manager;
@@ -183,14 +183,14 @@ export class AutoKickManager {
   }
 
   private async checkState(): Promise<State> {
-    const party = partyCache.get(this.account.accountId) || (await Party.get(this.account)).current[0];
+    const party = partyCache.get(this.account.accountId) || (await getParty(this.account)).current[0];
     const partyState = party?.meta['Default:PartyState_s'];
     if (!party || partyState !== 'PostMatchmaking') {
       return 'lobby';
     }
 
-    const queryProfile = await MCP.queryProfile(this.account, 'campaign');
-    const newMatchesPlayed = queryProfile.profileChanges[0].profile.stats.attributes.matches_played;
+    const campaignProfile = await queryProfile(this.account, 'campaign');
+    const newMatchesPlayed = campaignProfile.profileChanges[0].profile.stats.attributes.matches_played;
 
     if (this.matchesPlayed == null) {
       this.matchesPlayed = newMatchesPlayed;
@@ -207,11 +207,11 @@ export class AutoKickManager {
 
   private async postMissionActions() {
     const accountId = this.account.accountId;
-    const settings = AutoKickBase.accounts.get(accountId)?.settings || {};
+    const settings = autoKickAccounts.get(accountId)?.settings || {};
 
     logger.debug('Post-mission actions started', { accountId, settings });
 
-    const partyData = await Party.get(this.account);
+    const partyData = await getParty(this.account);
     const party = partyData.current[0] as PartyData | undefined;
 
     let kickPromise: Promise<unknown> = Promise.resolve();
@@ -259,28 +259,28 @@ export class AutoKickManager {
     const leaderId = party.members.find((x) => x.role === 'CAPTAIN')!.account_id;
     const leaderAccount = accounts.find((x) => x.accountId === leaderId);
 
-    const autoKickIds = memberIds.filter((x) => AutoKickBase.accounts.get(x)?.settings.autoKick);
+    const autoKickIds = memberIds.filter((x) => autoKickAccounts.get(x)?.settings.autoKick);
     const noAutoKickIds = memberIds.filter((x) => !autoKickIds.includes(x));
 
     if (leaderAccount) {
       await Promise.allSettled(
-        noAutoKickIds.filter((id) => id !== this.account.accountId).map((id) => Party.kick(leaderAccount, party.id, id))
+        noAutoKickIds.filter((id) => id !== this.account.accountId).map((id) => kickParty(leaderAccount, party.id, id))
       );
 
-      return Party.leave(this.account, party.id);
+      return leaveParty(this.account, party.id);
     }
 
     const leaveAccounts = accounts.filter((acc) => noAutoKickIds.includes(acc.accountId));
     leaveAccounts.push(this.account);
 
-    return Promise.allSettled(leaveAccounts.map((x) => Party.leave(x, party.id)));
+    return Promise.allSettled(leaveAccounts.map((x) => leaveParty(x, party.id)));
   }
 
   private async invite(members: PartyData['members']) {
     await this.xmpp.waitForEvent(EpicEvents.MemberJoined, (x) => x.account_id === this.account.accountId, 20_000);
     await sleep(10_000);
 
-    const [partyData, friends] = await Promise.allSettled([Party.get(this.account), Friends.getFriends(this.account)]);
+    const [partyData, friends] = await Promise.allSettled([getParty(this.account), getFriends(this.account)]);
 
     const party = partyData.status === 'fulfilled' ? partyData.value.current[0] : null;
     if (!party || friends.status === 'rejected' || !friends.value.length) {
@@ -291,7 +291,7 @@ export class AutoKickManager {
     return Promise.allSettled(
       friends.value
         .filter((x) => prevMemberIds.includes(x.accountId))
-        .map((x) => Party.invite(this.account, party.id, x.accountId))
+        .map((x) => invite(this.account, party.id, x.accountId))
     );
   }
 }

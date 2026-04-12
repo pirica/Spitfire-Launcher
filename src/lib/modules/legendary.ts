@@ -5,11 +5,11 @@ import { readTextFile } from '@tauri-apps/plugin-fs';
 import { LegendaryError } from '$lib/exceptions/LegendaryError';
 import { legendaryService } from '$lib/http';
 import { getChildLogger } from '$lib/logger';
-import { AuthSession } from '$lib/modules/auth-session';
-import { Authentication } from '$lib/modules/authentication';
+import { getCachedToken } from '$lib/modules/auth-session';
+import { getExchangeCodeUsingAccessToken } from '$lib/modules/authentication';
 import { dataDirectory } from '$lib/storage/file-store';
 import { ownedAppsCache } from '$lib/stores';
-import { Tauri } from '$lib/tauri';
+import { launchApp, runLegendary } from '$lib/tauri';
 import type { AccountData } from '$types/account';
 import type { EpicOAuthData } from '$types/game/authorizations';
 import type {
@@ -23,6 +23,7 @@ import type {
 
 const logger = getChildLogger('Legendary');
 export const configPath = await path.join(dataDirectory, dev ? 'legendary-dev' : 'legendary');
+let legendaryAccountId: string | undefined;
 
 type ExecuteResult<T = any> = {
   code: number | null;
@@ -31,179 +32,170 @@ type ExecuteResult<T = any> = {
   stderr: string;
 };
 
-export class Legendary {
-  private static accountId?: string;
+async function executeLegendary<T>(args: string[]): Promise<ExecuteResult<T>> {
+  try {
+    const result = await runLegendary({ configPath, args });
 
-  static async execute<T>(args: string[]): Promise<ExecuteResult<T>> {
-    try {
-      const result = await Tauri.runLegendary({ configPath, args });
-
-      logger.debug('Command executed', {
-        args,
-        code: result.code,
-        signal: result.signal,
-        stderr: result.stderr?.slice(-512)
-      });
-
-      let stdout = result.stdout as T;
-      if (args.includes('--json')) {
-        stdout = JSON.parse(result.stdout) as T;
-      }
-
-      if (result.code !== 0) {
-        throw new Error(result.stderr);
-      }
-
-      return {
-        code: result.code,
-        signal: result.signal,
-        stdout,
-        stderr: result.stderr
-      };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      throw new LegendaryError(message);
-    }
-  }
-
-  static async login(account: AccountData) {
-    const accessToken = await AuthSession.new(account).getAccessToken();
-    const { code: exchange } = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
-
-    const data = await Legendary.execute<string>(['auth', '--token', exchange]);
-    Legendary.accountId = account.accountId;
-    return data;
-  }
-
-  static async logout() {
-    const data = await Legendary.execute<string>(['auth', '--delete']);
-    Legendary.accountId = undefined;
-    ownedAppsCache.set([]);
-    return data;
-  }
-
-  static getList() {
-    return Legendary.execute<LegendaryList>(['list', '--json']);
-  }
-
-  static async getStatus() {
-    const { stdout } = await Legendary.execute<LegendaryStatus>(['status', '--json']);
-    if (stdout.account === '<not logged in>') {
-      stdout.account = null;
-    }
-
-    return stdout;
-  }
-
-  static async getAccount() {
-    if (Legendary.accountId) {
-      return Legendary.accountId;
-    }
-
-    try {
-      const userConfig = await path.join(configPath, 'user.json');
-      const file = await readTextFile(userConfig);
-      const data: EpicOAuthData = JSON.parse(file);
-      if (!data.account_id) return null;
-
-      Legendary.accountId = data.account_id;
-      return data.account_id;
-    } catch {
-      return null;
-    }
-  }
-
-  static getAppInfo(appId: string) {
-    return Legendary.execute<LegendaryAppInfo>(['info', appId, '--json']);
-  }
-
-  static getInstalledList() {
-    return Legendary.execute<LegendaryInstalledList>(['list-installed', '--json']);
-  }
-
-  static syncEGL() {
-    return Legendary.execute(['egl-sync', '-y', '--enable-sync']);
-  }
-
-  static async launch(appId: string) {
-    const { stdout: launchData } = await Legendary.execute<LegendaryLaunchData>([
-      'launch',
-      appId,
-      '--dry-run',
-      '--json'
-    ]);
-
-    return Tauri.launchApp({
-      launchData: {
-        ...launchData,
-        game_id: appId
-      }
+    logger.debug('Command executed', {
+      args,
+      code: result.code,
+      signal: result.signal,
+      stderr: result.stderr?.slice(-512)
     });
-  }
 
-  static async verify(appId: string) {
-    const { stderr } = await Legendary.execute<string>(['verify', appId, '-y', '--skip-sdl']);
-    const requiresRepair = stderr.includes('repair your game installation');
-    const requiredRepair = get(ownedAppsCache).find((app) => app.id === appId)?.requiresRepair || false;
-
-    if (requiresRepair !== requiredRepair) {
-      ownedAppsCache.update((current) => {
-        return current.map((app) => (app.id === appId ? { ...app, requiresRepair } : app));
-      });
+    let stdout = result.stdout as T;
+    if (args.includes('--json')) {
+      stdout = JSON.parse(result.stdout) as T;
     }
 
-    return { requiresRepair };
+    if (result.code !== 0) {
+      throw new Error(result.stderr);
+    }
+
+    return {
+      code: result.code,
+      signal: result.signal,
+      stdout,
+      stderr: result.stderr
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new LegendaryError(message);
+  }
+}
+
+export async function loginLegendary(account: AccountData) {
+  const accessToken = await getCachedToken(account);
+  const { code: exchange } = await getExchangeCodeUsingAccessToken(accessToken);
+
+  const data = await executeLegendary<string>(['auth', '--token', exchange]);
+  legendaryAccountId = account.accountId;
+  return data;
+}
+
+export async function logoutLegendary() {
+  const data = await executeLegendary<string>(['auth', '--delete']);
+  legendaryAccountId = undefined;
+  ownedAppsCache.set([]);
+  return data;
+}
+
+export function getLegendaryList() {
+  return executeLegendary<LegendaryList>(['list', '--json']);
+}
+
+export async function getLegendaryStatus() {
+  const { stdout } = await executeLegendary<LegendaryStatus>(['status', '--json']);
+  if (stdout.account === '<not logged in>') {
+    stdout.account = null;
   }
 
-  static async uninstall(appId: string) {
-    const data = await Legendary.execute(['uninstall', appId, '-y']);
+  return stdout;
+}
 
+export async function getLegendaryAccount() {
+  if (legendaryAccountId) {
+    return legendaryAccountId;
+  }
+
+  try {
+    const userConfig = await path.join(configPath, 'user.json');
+    const file = await readTextFile(userConfig);
+    const data: EpicOAuthData = JSON.parse(file);
+    if (!data.account_id) return null;
+
+    legendaryAccountId = data.account_id;
+    return data.account_id;
+  } catch {
+    return null;
+  }
+}
+
+export function getLegendaryAppInfo(appId: string) {
+  return executeLegendary<LegendaryAppInfo>(['info', appId, '--json']);
+}
+
+export function getLegendaryInstalledList() {
+  return executeLegendary<LegendaryInstalledList>(['list-installed', '--json']);
+}
+
+export function syncLegendaryEGL() {
+  return executeLegendary(['egl-sync', '-y', '--enable-sync']);
+}
+
+export async function launchLegendaryApp(appId: string) {
+  const { stdout: launchData } = await executeLegendary<LegendaryLaunchData>(['launch', appId, '--dry-run', '--json']);
+
+  return launchApp({
+    launchData: {
+      ...launchData,
+      game_id: appId
+    }
+  });
+}
+
+export async function verifyLegendaryApp(appId: string) {
+  const { stderr } = await executeLegendary<string>(['verify', appId, '-y', '--skip-sdl']);
+  const requiresRepair = stderr.includes('repair your game installation');
+  const requiredRepair = get(ownedAppsCache).find((app) => app.id === appId)?.requiresRepair || false;
+
+  if (requiresRepair !== requiredRepair) {
     ownedAppsCache.update((current) => {
-      return current.map((app) => (app.id === appId ? { ...app, installed: false } : app));
+      return current.map((app) => (app.id === appId ? { ...app, requiresRepair } : app));
     });
-
-    return data;
   }
 
-  static async cacheApps() {
-    const list = await Legendary.getList();
-    await Legendary.syncEGL();
-    const installedList = await Legendary.getInstalledList();
+  return { requiresRepair };
+}
 
-    ownedAppsCache.set(
-      list.stdout
-        .filter((app) => app.metadata.entitlementType === 'EXECUTABLE')
-        .map((app) => {
-          const images = app.metadata.keyImages.reduce<Record<string, string>>((acc, image) => {
-            acc[image.type] = image.url;
-            return acc;
-          }, {});
+export async function uninstallLegendaryApp(appId: string) {
+  const data = await executeLegendary(['uninstall', appId, '-y']);
 
-          const installed = installedList.stdout.find((installed) => installed.app_name === app.app_name);
+  ownedAppsCache.update((current) => {
+    return current.map((app) => (app.id === appId ? { ...app, installed: false } : app));
+  });
 
-          return {
-            id: app.app_name,
-            title: app.app_title,
-            images: {
-              tall: images.DieselGameBoxTall || app.metadata.keyImages[0]?.url,
-              wide: images.DieselGameBox || images.Featured || app.metadata.keyImages[0]?.url
-            },
-            requiresRepair: installed && installed.needs_verification,
-            hasUpdate: installed ? installed.version !== app.asset_infos.Windows.build_version : false,
-            installSize: installed?.install_size || 0,
-            installed: !!installed,
-            canRunOffline: installed?.can_run_offline || false
-          };
-        })
-    );
+  return data;
+}
+
+export async function cacheLegendaryApps() {
+  const list = await getLegendaryList();
+  await syncLegendaryEGL();
+  const installedList = await getLegendaryInstalledList();
+
+  ownedAppsCache.set(
+    list.stdout
+      .filter((app) => app.metadata.entitlementType === 'EXECUTABLE')
+      .map((app) => {
+        const images = app.metadata.keyImages.reduce<Record<string, string>>((acc, image) => {
+          acc[image.type] = image.url;
+          return acc;
+        }, {});
+
+        const installed = installedList.stdout.find((installed) => installed.app_name === app.app_name);
+
+        return {
+          id: app.app_name,
+          title: app.app_title,
+          images: {
+            tall: images.DieselGameBoxTall || app.metadata.keyImages[0]?.url,
+            wide: images.DieselGameBox || images.Featured || app.metadata.keyImages[0]?.url
+          },
+          requiresRepair: installed && installed.needs_verification,
+          hasUpdate: installed ? installed.version !== app.asset_infos.Windows.build_version : false,
+          installSize: installed?.install_size || 0,
+          installed: !!installed,
+          canRunOffline: installed?.can_run_offline || false
+        };
+      })
+  );
+}
+
+export async function getLegendarySDLList(appName: string) {
+  const response = await legendaryService.get(`v1/sdl/${appName}.json`);
+  if (!response.headers.get('Content-Type')?.includes('application/json')) {
+    throw new LegendaryError('App not found');
   }
 
-  static async getSDLList(appName: string) {
-    const response = await legendaryService.get(`v1/sdl/${appName}.json`);
-    if (!response.headers.get('Content-Type')?.includes('application/json')) {
-      throw new LegendaryError('App not found');
-    }
-
-    return await response.json<LegendarySDLResponse>();
-  }
+  return await response.json<LegendarySDLResponse>();
 }

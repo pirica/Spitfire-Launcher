@@ -3,8 +3,8 @@
   import { toast } from 'svelte-sonner';
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { DownloadManager } from '$lib/modules/download.svelte.js';
-  import { Legendary } from '$lib/modules/legendary';
+  import { downloadingAppId } from '$lib/modules/download.svelte.js';
+  import { cacheLegendaryApps, getLegendaryAccount, loginLegendary, logoutLegendary } from '$lib/modules/legendary';
   import { downloaderSettingsSchema } from '$lib/schemas/settings';
   import { accountStore, downloaderStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
@@ -54,12 +54,12 @@
     switching = true;
 
     try {
-      await Legendary.logout();
+      await logoutLegendary();
 
       if (accountId) {
         const account = accountStore.getAccount(accountId)!;
-        await Legendary.login(account);
-        Legendary.cacheApps().catch((error) => {
+        await loginLegendary(account);
+        cacheLegendaryApps().catch((error) => {
           logger.error('Failed to cache apps after switching downloader account', { error });
         });
       }
@@ -80,7 +80,7 @@
   }
 
   onMount(async () => {
-    downloaderAccountId = (await Legendary.getAccount()) || undefined;
+    downloaderAccountId = (await getLegendaryAccount()) || undefined;
     loadingAccount = false;
 
     await tick();
@@ -112,7 +112,7 @@
     title={$t('settings.downloader.account.title')}
   >
     <AccountCombobox
-      disabled={switching || loadingAccount || !!DownloadManager.downloadingAppId}
+      disabled={switching || loadingAccount || !!$downloadingAppId}
       type="single"
       bind:value={downloaderAccountId}
     />

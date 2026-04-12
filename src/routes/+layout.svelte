@@ -14,16 +14,22 @@
   import { SidebarItems } from '$lib/constants/sidebar';
   import { language, t } from '$lib/i18n';
   import { logger, setLogLevel } from '$lib/logger';
-  import { AutoKickBase } from '$lib/modules/autokick/base';
-  import { Avatar } from '$lib/modules/avatar';
-  import { DownloadManager } from '$lib/modules/download.svelte';
-  import { Legendary } from '$lib/modules/legendary';
-  import { Lookup } from '$lib/modules/lookup';
-  import { WorldInfo } from '$lib/modules/world-info';
+  import { initAutoKick } from '$lib/modules/autokick/base';
+  import { fetchAvatars } from '$lib/modules/avatar';
+  import { addToQueue, initDownloader } from '$lib/modules/download.svelte';
+  import { cacheLegendaryApps, getLegendaryAccount, getLegendaryAppInfo } from '$lib/modules/legendary';
+  import { fetchUsersByIds } from '$lib/modules/lookup';
+  import { setWorldInfoCache } from '$lib/modules/world-info';
   import { setLocale } from '$lib/paraglide/runtime';
   import { accountStore, downloaderStore, settingsStore } from '$lib/storage';
   import { ownedAppsCache, runningAppIds } from '$lib/stores';
-  import { Tauri } from '$lib/tauri';
+  import {
+    connectDiscordRPC,
+    disconnectDiscordRPC,
+    getTrackedApps,
+    setTrayVisibility,
+    updateDiscordRPC
+  } from '$lib/tauri';
   import { handleError } from '$lib/utils';
   import Header from '$components/layout/header/Header.svelte';
   import Sidebar from '$components/layout/sidebar/Sidebar.svelte';
@@ -59,7 +65,7 @@
     if (!account) return;
 
     const userAccounts = $accountStore.accounts;
-    const accounts = await Lookup.fetchByIds(
+    const accounts = await fetchUsersByIds(
       account,
       userAccounts.map((account) => account.accountId)
     );
@@ -74,10 +80,10 @@
   }
 
   async function autoUpdateApps() {
-    const account = await Legendary.getAccount();
+    const account = await getLegendaryAccount();
     if (!account) return;
 
-    await Legendary.cacheApps();
+    await cacheLegendaryApps();
 
     const updatableApps = $ownedAppsCache.filter((app) => app.hasUpdate);
     const appAutoUpdate = $downloaderStore.perAppAutoUpdate || {};
@@ -85,7 +91,7 @@
     let sentFirstNotification = false;
     for (const app of updatableApps) {
       if (appAutoUpdate[app.id] ?? $downloaderStore.autoUpdate) {
-        await DownloadManager.addToQueue(app);
+        await addToQueue(app);
 
         if (!sentFirstNotification) {
           sentFirstNotification = true;
@@ -99,7 +105,7 @@
     const cached = $ownedAppsCache.find((app) => app.id === appId);
     if (cached) return cached.title;
 
-    const appInfo = await Legendary.getAppInfo(appId);
+    const appInfo = await getLegendaryAppInfo(appId);
     return appInfo.stdout.game.title;
   }
 
@@ -109,17 +115,17 @@
     let previousDcStatus = false;
     settingsStore.subscribe(async (data) => {
       setLogLevel(data.app?.debugLogs ? 'debug' : 'info');
-      Tauri.setTrayVisibility({ visible: !!data.app?.hideToTray });
+      setTrayVisibility({ visible: !!data.app?.hideToTray });
 
       const dcStatusEnabled = data.app!.discordStatus!;
       if (dcStatusEnabled !== previousDcStatus) {
         previousDcStatus = dcStatusEnabled;
 
         if (dcStatusEnabled) {
-          await Tauri.connectDiscordRPC();
-          await Tauri.updateDiscordRPC({ details: defaultDiscordStatus });
+          await connectDiscordRPC();
+          await updateDiscordRPC({ details: defaultDiscordStatus });
         } else {
-          await Tauri.disconnectDiscordRPC();
+          await disconnectDiscordRPC();
         }
       }
     });
@@ -140,7 +146,7 @@
         const appName = await getAppName(appId).catch(() => null);
         if (!appName) return;
 
-        await Tauri.updateDiscordRPC({ details: `Playing ${appName}` });
+        await updateDiscordRPC({ details: `Playing ${appName}` });
       } else {
         runningAppIds.delete(appId);
 
@@ -149,16 +155,16 @@
         const newApp = Array.from(runningAppIds)[0];
         const appName = newApp ? await getAppName(newApp).catch(() => null) : null;
         if (newApp && appName) {
-          await Tauri.updateDiscordRPC({ details: `Playing ${appName}` });
+          await updateDiscordRPC({ details: `Playing ${appName}` });
         } else {
-          await Tauri.updateDiscordRPC({ details: defaultDiscordStatus });
+          await updateDiscordRPC({ details: defaultDiscordStatus });
         }
       }
     });
 
     if (platform() === 'windows') {
       // Used to set running apps when the page is refreshed
-      Tauri.getTrackedApps()
+      getTrackedApps()
         .then((apps) => {
           for (const app of apps) {
             if (app.is_running) {
@@ -209,9 +215,9 @@
 
     Promise.allSettled([
       setupDiscordRPC(),
-      AutoKickBase.init(),
-      DownloadManager.init(),
-      WorldInfo.setCache(),
+      initAutoKick(),
+      initDownloader(),
+      setWorldInfoCache(),
       checkForUpdates(),
       syncAccountNames(),
       autoUpdateApps(),
@@ -219,7 +225,7 @@
       // However, fetching per account allows invalid accounts to fail independently
       // and be detected and removed from the config.
       $accountStore.accounts.map((x) =>
-        Avatar.fetchAvatars(x, [x.accountId]).catch((error) => {
+        fetchAvatars(x, [x.accountId]).catch((error) => {
           handleError({
             error,
             message: 'Failed to fetch avatar',

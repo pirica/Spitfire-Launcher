@@ -4,7 +4,7 @@
   import XIcon from '@lucide/svelte/icons/x';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { platform } from '@tauri-apps/plugin-os';
-  import { DownloadManager } from '$lib/modules/download.svelte.js';
+  import { pauseDownload } from '$lib/modules/download.svelte.js';
   import { settingsStore } from '$lib/storage';
   import LaunchGame from '$components/layout/header/LaunchGame.svelte';
   import SidebarBurger from '$components/layout/header/SidebarBurger.svelte';
@@ -23,7 +23,7 @@
   }
 
   async function close() {
-    await DownloadManager.pauseDownload();
+    await pauseDownload();
     await appWindow.close();
   }
 </script>

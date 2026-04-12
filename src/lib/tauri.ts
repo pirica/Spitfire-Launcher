@@ -75,55 +75,53 @@ export type UpdateDiscordRPCOptions = {
   details: string;
 };
 
-export class Tauri {
-  static getLocale() {
-    return invoke<string>('get_locale');
-  }
+export function getLocale() {
+  return invoke<string>('get_locale');
+}
 
-  static getDiskSpace(options: GetDiskSpaceOptions) {
-    return invoke<GetDiskSpaceResult>('get_disk_space', options);
-  }
+export function getDiskSpace(options: GetDiskSpaceOptions) {
+  return invoke<GetDiskSpaceResult>('get_disk_space', options);
+}
 
-  static setTrayVisibility(options: SetTrayVisibilityOptions) {
-    const isMobile = type() === 'android' || type() === 'ios';
-    if (isMobile) return;
+export function setTrayVisibility(options: SetTrayVisibilityOptions) {
+  const isMobile = type() === 'android' || type() === 'ios';
+  if (isMobile) return;
 
-    return invoke<void>('set_tray_visibility', options);
-  }
+  return invoke<void>('set_tray_visibility', options);
+}
 
-  static runLegendary(options: RunLegendaryOptions) {
-    return invoke<RunLegendaryResult>('run_legendary', options);
-  }
+export function runLegendary(options: RunLegendaryOptions) {
+  return invoke<RunLegendaryResult>('run_legendary', options);
+}
 
-  static startLegendaryStream(options: StartLegendaryStreamOptions) {
-    return invoke<StartLegendaryStreamResult>('start_legendary_stream', options);
-  }
+export function startLegendaryStream(options: StartLegendaryStreamOptions) {
+  return invoke<StartLegendaryStreamResult>('start_legendary_stream', options);
+}
 
-  static stopLegendaryStream(options: StopLegendaryStreamOptions) {
-    return invoke<StopLegendaryStreamResult>('stop_legendary_stream', options);
-  }
+export function stopLegendaryStream(options: StopLegendaryStreamOptions) {
+  return invoke<StopLegendaryStreamResult>('stop_legendary_stream', options);
+}
 
-  static launchApp(options: LaunchAppOptions) {
-    return invoke<LaunchAppResult>('launch_app', options);
-  }
+export function launchApp(options: LaunchAppOptions) {
+  return invoke<LaunchAppResult>('launch_app', options);
+}
 
-  static getTrackedApps() {
-    return invoke<GetTrackedAppsResult>('get_tracked_apps');
-  }
+export function getTrackedApps() {
+  return invoke<GetTrackedAppsResult>('get_tracked_apps');
+}
 
-  static stopApp(options: StopAppOptions) {
-    return invoke<StopAppResult>('stop_app', options);
-  }
+export function stopApp(options: StopAppOptions) {
+  return invoke<StopAppResult>('stop_app', options);
+}
 
-  static connectDiscordRPC() {
-    return invoke<void>('connect_discord_rpc');
-  }
+export function connectDiscordRPC() {
+  return invoke<void>('connect_discord_rpc');
+}
 
-  static updateDiscordRPC(options: UpdateDiscordRPCOptions) {
-    return invoke<void>('update_discord_rpc', options);
-  }
+export function updateDiscordRPC(options: UpdateDiscordRPCOptions) {
+  return invoke<void>('update_discord_rpc', options);
+}
 
-  static disconnectDiscordRPC() {
-    return invoke<void>('disconnect_discord_rpc');
-  }
+export function disconnectDiscordRPC() {
+  return invoke<void>('disconnect_discord_rpc');
 }

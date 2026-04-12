@@ -4,7 +4,7 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { arch, platform } from '@tauri-apps/plugin-os';
 import { defaultClient } from '$lib/constants/clients';
 import { EpicAPIError, isEpicAPIError } from '$lib/exceptions/EpicAPIError';
-import { Manifest } from '$lib/modules/manifest';
+import { getFortniteManifest } from '$lib/modules/manifest';
 import { settingsStore } from '$lib/storage';
 
 // Used to avoid CORS issues
@@ -34,7 +34,7 @@ export const tauriKy = ky.create({
   }
 });
 
-const manifest = await Manifest.getFortniteManifest().catch(() => null);
+const manifest = await getFortniteManifest().catch(() => null);
 const defaultUserAgent = manifest?.appVersionString
   ? `Fortnite/${manifest.appVersionString.replace('-Windows', '')} Windows/10.0.26100.1.256.64bit`
   : 'Fortnite/++Fortnite+Release-40.10-CL-52157884 Windows/10.0.26100.1.256.64bit';

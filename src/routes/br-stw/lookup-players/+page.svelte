@@ -31,8 +31,8 @@
   import { FounderEditionNames, Rarities } from '$lib/constants/stw/resources';
   import { language, t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { Lookup } from '$lib/modules/lookup';
-  import { MCP } from '$lib/modules/mcp';
+  import { fetchUserByNameOrId } from '$lib/modules/lookup';
+  import { queryPublicProfile } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
   import { avatarCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
@@ -55,7 +55,7 @@
     resetData();
 
     try {
-      const internalLookupData = await Lookup.fetchByNameOrId($activeAccount, searchQuery);
+      const internalLookupData = await fetchUserByNameOrId($activeAccount, searchQuery);
 
       try {
         await getSTWData(internalLookupData.accountId);
@@ -76,8 +76,8 @@
   }
 
   async function getSTWData(accountId: string) {
-    const queryPublicProfile = await MCP.queryPublicProfile($activeAccount, accountId, 'campaign');
-    const profile = queryPublicProfile.profileChanges[0].profile;
+    const publicProfileData = await queryPublicProfile($activeAccount, accountId, 'campaign');
+    const profile = publicProfileData.profileChanges[0].profile;
     const items = Object.entries(profile.items);
     const attributes = profile.stats.attributes;
 

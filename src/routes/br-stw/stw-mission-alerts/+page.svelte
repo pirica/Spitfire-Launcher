@@ -4,8 +4,8 @@
   import FunnelIcon from '@lucide/svelte/icons/funnel';
   import { TheaterNames, TheaterPowerLevels, Theaters, ZoneCategories } from '$lib/constants/stw/world-info';
   import { t } from '$lib/i18n';
-  import { MCP } from '$lib/modules/mcp';
-  import { WorldInfo } from '$lib/modules/world-info';
+  import { queryProfile } from '$lib/modules/mcp';
+  import { setWorldInfoCache } from '$lib/modules/world-info';
   import { accountStore } from '$lib/storage';
   import { claimedAlerts, worldInfoCache } from '$lib/stores';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -194,7 +194,7 @@
 
   function refreshWorldInfo() {
     worldInfoCache.set(new Map());
-    WorldInfo.setCache();
+    setWorldInfoCache();
   }
 
   function getResetDate() {
@@ -205,8 +205,8 @@
   $effect(() => {
     if (!$activeAccount || claimedAlerts.has($activeAccount.accountId)) return;
 
-    MCP.queryProfile($activeAccount, 'campaign').then((queryProfile) => {
-      const attributes = queryProfile.profileChanges[0].profile.stats.attributes;
+    queryProfile($activeAccount, 'campaign').then((campaignProfile) => {
+      const attributes = campaignProfile.profileChanges[0].profile.stats.attributes;
       const doneMissionAlerts =
         attributes.mission_alert_redemption_record?.claimData?.map((claimData) => claimData.missionAlertId) || [];
 

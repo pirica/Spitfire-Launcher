@@ -3,7 +3,7 @@
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { language, t } from '$lib/i18n';
-  import { MCP } from '$lib/modules/mcp';
+  import { purchaseCatalogEntry } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
   import { accountDataCache, createDiscountedStore, ownedItemsCache } from '$lib/stores';
   import { Button, buttonVariants } from '$components/ui/button';
@@ -26,7 +26,7 @@
     isPurchasing = true;
 
     try {
-      const purchaseData = await MCP.purchaseCatalogEntry($activeAccount, item.offerId, $discountedPrice);
+      const purchaseData = await purchaseCatalogEntry($activeAccount, item.offerId, $discountedPrice);
 
       accountDataCache.set($activeAccount.accountId, {
         ...dataCache,

@@ -24,11 +24,17 @@
   import { EpicEvents } from '$lib/constants/events';
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { AutoKickBase } from '$lib/modules/autokick/base';
+  import { autoKickAccounts } from '$lib/modules/autokick/base';
   import { claimRewards } from '$lib/modules/autokick/claim-rewards';
   import { transferBuildingMaterials } from '$lib/modules/autokick/transfer-building-materials';
-  import { Friends } from '$lib/modules/friends';
-  import { Party } from '$lib/modules/party';
+  import { addFriend, getFriends, getFriendsSummary, removeFriend as removePartyFriend } from '$lib/modules/friends';
+  import {
+    getParty,
+    invite,
+    kickParty,
+    leaveParty as leavePartyRequest,
+    promote as promoteParty
+  } from '$lib/modules/party';
   import { XMPPManager } from '$lib/modules/xmpp';
   import { accountStore } from '$lib/storage';
   import { friendsCache, partyCache } from '$lib/stores';
@@ -92,7 +98,7 @@
     const cache = partyCache.get(account.accountId);
     if (cache) return cache;
 
-    const response = await Party.get(account);
+    const response = await getParty(account);
     return response?.current[0];
   }
 
@@ -120,7 +126,7 @@
       const memberIds = party.members.map((x) => x.account_id).filter((id) => id !== kickerAccount.accountId);
       await Promise.allSettled(memberIds.map((id) => kickMember(party.id, id, kickerAccount)));
 
-      await Party.leave(kickerAccount, party.id);
+      await leavePartyRequest(kickerAccount, party.id);
       afterKickActions(kickerAccount.accountId);
 
       toast.success($t('partyManagement.stwActions.kickedAll'));
@@ -151,7 +157,7 @@
     kickingMemberIds.add(memberId);
 
     try {
-      await Party.kick(kicker, partyId, memberId);
+      await kickParty(kicker, partyId, memberId);
       afterKickActions(memberId);
     } catch (error) {
       handleError({
@@ -209,7 +215,7 @@
             if (!claimOnly) {
               const oldParty = partyCache.get(account.accountId);
               const oldMembers = oldParty?.members.filter((x) => x.account_id !== account.accountId) || [];
-              await Party.leave(account, partyId);
+              await leavePartyRequest(account, partyId);
 
               if (shouldInvite && !claimOnly) {
                 fetchPartyData(account).then((party) => {
@@ -256,7 +262,7 @@
     await xmpp.waitForEvent(EpicEvents.MemberJoined, (data) => data.account_id === account.accountId, 20000);
     await sleep(10_000);
 
-    const [partyRes, friendsRes] = await Promise.allSettled([Party.get(account), Friends.getFriends(account)]);
+    const [partyRes, friendsRes] = await Promise.allSettled([getParty(account), getFriends(account)]);
 
     const party = partyRes.status === 'fulfilled' ? partyRes.value.current[0] : null;
     if (!party || friendsRes.status === 'rejected' || friendsRes.value.length) return;
@@ -264,14 +270,14 @@
     const memberIds = members.map((x) => x.account_id).filter((x) => x !== account.accountId);
     const friendsInParty = friendsRes.value.filter((friend) => memberIds.includes(friend.accountId));
 
-    await Promise.allSettled(friendsInParty.map((friend) => Party.invite(account, party.id, friend.accountId)));
+    await Promise.allSettled(friendsInParty.map((friend) => invite(account, party.id, friend.accountId)));
   }
 
   async function afterKickActions(memberId: string, claim = false) {
     const account = allAccounts.find((a) => a.accountId === memberId);
     if (!account) return;
 
-    const settings = AutoKickBase.accounts.get(memberId)?.settings || {};
+    const settings = autoKickAccounts.get(memberId)?.settings || {};
     const promises: Promise<unknown>[] = [];
 
     if (!settings.autoClaim && (claim || shouldClaimRewards)) {
@@ -300,7 +306,7 @@
       const member = partyMembers?.find((m) => m.accountId === memberId);
       if (!member || !partyLeaderAccount || !currentAccountParty) return;
 
-      await Party.promote(partyLeaderAccount, currentAccountParty.id, memberId);
+      await promoteParty(partyLeaderAccount, currentAccountParty.id, memberId);
       toast.success($t('partyManagement.stwActions.promotedMember', { name: member.displayName }));
     } catch (error) {
       handleError({
@@ -317,7 +323,7 @@
     isAddingFriend = true;
 
     try {
-      await Friends.addFriend($activeAccount, memberId);
+      await addFriend($activeAccount, memberId);
     } catch (error) {
       handleError({
         error,
@@ -333,7 +339,7 @@
     isRemovingFriend = true;
 
     try {
-      await Friends.removeFriend($activeAccount, memberId);
+      await removePartyFriend($activeAccount, memberId);
     } catch (error) {
       handleError({
         error,
@@ -364,7 +370,7 @@
     });
 
     if (!friendsCache.has($activeAccount.accountId)) {
-      Friends.getSummary($activeAccount);
+      getFriendsSummary($activeAccount);
     }
   });
 </script>

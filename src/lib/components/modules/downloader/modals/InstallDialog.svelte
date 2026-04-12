@@ -15,11 +15,11 @@
   import PackageIcon from '@lucide/svelte/icons/package';
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { DownloadManager } from '$lib/modules/download.svelte.js';
-  import { Legendary } from '$lib/modules/legendary';
+  import { addToQueue, downloadingAppId } from '$lib/modules/download.svelte.js';
+  import { getLegendaryAppInfo, getLegendarySDLList } from '$lib/modules/legendary';
   import { downloaderStore } from '$lib/storage';
   import { ownedAppsCache } from '$lib/stores';
-  import { Tauri } from '$lib/tauri';
+  import { getDiskSpace } from '$lib/tauri';
   import { bytesToSize, cn } from '$lib/utils';
   import DownloadStartedToast from '$components/modules/downloader/DownloadStartedToast.svelte';
   import { Button, buttonVariants } from '$components/ui/button';
@@ -58,8 +58,8 @@
         installTags.push(...sdlList['__required'].tags);
       }
 
-      await DownloadManager.addToQueue(app, installTags.filter(Boolean));
-      if (DownloadManager.downloadingAppId === app.id) {
+      await addToQueue(app, installTags.filter(Boolean));
+      if ($downloadingAppId === app.id) {
         toast.info(DownloadStartedToast);
       }
     } catch (error) {
@@ -74,9 +74,9 @@
     const [appInfo, diskSpace, sdlData] = await Promise.all([
       appInfoCache.get(app.id)
         ? Promise.resolve(appInfoCache.get(app.id)!)
-        : Legendary.getAppInfo(app.id).then((x) => x.stdout),
-      Tauri.getDiskSpace({ dir: downloaderStore.get().downloadPath! }),
-      Legendary.getSDLList(app.id).catch(() => null)
+        : getLegendaryAppInfo(app.id).then((x) => x.stdout),
+      getDiskSpace({ dir: downloaderStore.get().downloadPath! }),
+      getLegendarySDLList(app.id).catch(() => null)
     ]);
 
     sdlList = sdlData;

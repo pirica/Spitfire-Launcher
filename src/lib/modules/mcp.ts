@@ -1,110 +1,111 @@
 import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { baseGameService } from '$lib/http';
-import { AuthSession } from '$lib/modules/auth-session';
+import { getAuthedKy } from '$lib/modules/auth-session';
 import type { AccountData } from '$types/account';
 import type { FullQueryProfile, MCPOperation, MCPProfileId, MCPRoute } from '$types/game/mcp';
 
-export class MCP {
-  static compose<T>(
-    account: AccountData,
-    operation: MCPOperation,
-    profile: MCPProfileId,
-    data: Record<string, any>,
-    route?: MCPRoute
-  ) {
-    const r = route || (operation === 'QueryPublicProfile' ? 'public' : 'client');
-    return AuthSession.ky(account, baseGameService)
-      .post<T>(`profile/${account.accountId}/${r}/${operation}?profileId=${profile}&rvn=-1`, { json: data })
-      .json();
-  }
+export function composeMCP<T>(
+  account: AccountData,
+  operation: MCPOperation,
+  profile: MCPProfileId,
+  data: Record<string, any>,
+  route?: MCPRoute
+) {
+  const r = route || (operation === 'QueryPublicProfile' ? 'public' : 'client');
+  return getAuthedKy(account, baseGameService)
+    .post<T>(`profile/${account.accountId}/${r}/${operation}?profileId=${profile}&rvn=-1`, { json: data })
+    .json();
+}
 
-  static queryProfile<T extends MCPProfileId>(account: AccountData, profile: T) {
-    return this.compose<FullQueryProfile<T>>(account, 'QueryProfile', profile, {});
-  }
+export function queryProfile<T extends MCPProfileId>(account: AccountData, profile: T) {
+  return composeMCP<FullQueryProfile<T>>(account, 'QueryProfile', profile, {});
+}
 
-  static queryPublicProfile<T extends Extract<MCPProfileId, 'campaign' | 'common_public'>>(
-    account: AccountData,
-    targetAccountId: string,
-    profile: T
-  ) {
-    return AuthSession.ky(account, baseGameService)
-      .post<
-        FullQueryProfile<T>
-      >(`profile/${targetAccountId}/public/QueryPublicProfile?profileId=${profile}&rvn=-1`, { json: {} })
-      .json();
-  }
+export function queryPublicProfile<T extends Extract<MCPProfileId, 'campaign' | 'common_public'>>(
+  account: AccountData,
+  targetAccountId: string,
+  profile: T
+) {
+  return getAuthedKy(account, baseGameService)
+    .post<FullQueryProfile<T>>(`profile/${targetAccountId}/public/QueryPublicProfile?profileId=${profile}&rvn=-1`, {
+      json: {}
+    })
+    .json();
+}
 
-  static clientQuestLogin<T extends Extract<MCPProfileId, 'athena' | 'campaign'>>(account: AccountData, profile: T) {
-    return this.compose<FullQueryProfile<T>>(account, 'ClientQuestLogin', profile, { streamingAppKey: '' });
-  }
+export function clientQuestLogin<T extends Extract<MCPProfileId, 'athena' | 'campaign'>>(
+  account: AccountData,
+  profile: T
+) {
+  return composeMCP<FullQueryProfile<T>>(account, 'ClientQuestLogin', profile, { streamingAppKey: '' });
+}
 
-  static async purchaseCatalogEntry(
-    account: AccountData,
-    offerId: string,
-    price: number,
-    isPriceRetry?: boolean
-  ): Promise<{ vbucksSpent: number }> {
-    try {
-      await MCP.compose(account, 'PurchaseCatalogEntry', 'common_core', {
-        offerId,
-        purchaseQuantity: 1,
-        currency: 'MtxCurrency',
-        currencySubType: '',
-        expectedTotalPrice: price,
-        gameContext: 'GameContext: Frontend.CatabaScreen'
-      });
+export async function purchaseCatalogEntry(
+  account: AccountData,
+  offerId: string,
+  price: number,
+  isPriceRetry?: boolean
+): Promise<{ vbucksSpent: number }> {
+  try {
+    await composeMCP(account, 'PurchaseCatalogEntry', 'common_core', {
+      offerId,
+      purchaseQuantity: 1,
+      currency: 'MtxCurrency',
+      currencySubType: '',
+      expectedTotalPrice: price,
+      gameContext: 'GameContext: Frontend.CatabaScreen'
+    });
 
-      return { vbucksSpent: price };
-    } catch (error) {
-      if (MCP.isPriceMismatchError(error) && !isPriceRetry) {
-        const newPrice = Number.parseInt(error.messageVars[1]);
-        if (newPrice > price) throw error;
+    return { vbucksSpent: price };
+  } catch (error) {
+    if (isPriceMismatchError(error) && !isPriceRetry) {
+      const newPrice = Number.parseInt(error.messageVars[1]);
+      if (newPrice > price) throw error;
 
-        return this.purchaseCatalogEntry(account, offerId, newPrice, true);
-      }
-
-      throw error;
+      return purchaseCatalogEntry(account, offerId, newPrice, true);
     }
+
+    throw error;
   }
+}
 
-  static async giftCatalogEntry(
-    account: AccountData,
-    offerId: string,
-    receivers: string[],
-    price: number,
-    isPriceRetry?: boolean
-  ): Promise<{ vbucksSpent: number }> {
-    try {
-      await MCP.compose(account, 'GiftCatalogEntry', 'common_core', {
-        offerId,
-        currency: 'MtxCurrency',
-        currencySubType: '',
-        expectedTotalPrice: price,
-        gameContext: 'Frontend.CatabaScreen',
-        receiverAccountIds: receivers,
-        giftWrapTemplateId: '',
-        personalMessage: 'Hope you like my gift!'
-      });
+export async function giftCatalogEntry(
+  account: AccountData,
+  offerId: string,
+  receivers: string[],
+  price: number,
+  isPriceRetry?: boolean
+): Promise<{ vbucksSpent: number }> {
+  try {
+    await composeMCP(account, 'GiftCatalogEntry', 'common_core', {
+      offerId,
+      currency: 'MtxCurrency',
+      currencySubType: '',
+      expectedTotalPrice: price,
+      gameContext: 'Frontend.CatabaScreen',
+      receiverAccountIds: receivers,
+      giftWrapTemplateId: '',
+      personalMessage: 'Hope you like my gift!'
+    });
 
-      return { vbucksSpent: price * receivers.length };
-    } catch (error) {
-      if (MCP.isPriceMismatchError(error) && !isPriceRetry) {
-        const newPrice = Number.parseInt(error.messageVars[1]);
-        if (newPrice > price) throw error;
+    return { vbucksSpent: price * receivers.length };
+  } catch (error) {
+    if (isPriceMismatchError(error) && !isPriceRetry) {
+      const newPrice = Number.parseInt(error.messageVars[1]);
+      if (newPrice > price) throw error;
 
-        return this.giftCatalogEntry(account, offerId, receivers, newPrice, true);
-      }
-
-      throw error;
+      return giftCatalogEntry(account, offerId, receivers, newPrice, true);
     }
-  }
 
-  private static isPriceMismatchError(error: unknown): error is EpicAPIError {
-    return (
-      error instanceof EpicAPIError &&
-      error.errorCode === 'errors.com.epicgames.modules.gamesubcatalog.catalog_out_of_date' &&
-      error.errorMessage.toLowerCase().includes('did not match actual price') &&
-      !Number.isNaN(Number.parseInt(error.messageVars[1]))
-    );
+    throw error;
   }
+}
+
+function isPriceMismatchError(error: unknown): error is EpicAPIError {
+  return (
+    error instanceof EpicAPIError &&
+    error.errorCode === 'errors.com.epicgames.modules.gamesubcatalog.catalog_out_of_date' &&
+    error.errorMessage.toLowerCase().includes('did not match actual price') &&
+    !Number.isNaN(Number.parseInt(error.messageVars[1]))
+  );
 }

@@ -10,10 +10,10 @@
   import Fuse from 'fuse.js';
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { Friends } from '$lib/modules/friends';
-  import { Lookup } from '$lib/modules/lookup';
-  import { MCP } from '$lib/modules/mcp';
-  import { SpitfireAPI } from '$lib/modules/spitfire';
+  import { getFriends } from '$lib/modules/friends';
+  import { fetchUsersByIds } from '$lib/modules/lookup';
+  import { queryProfile } from '$lib/modules/mcp';
+  import { fetchShop as fetchShopData } from '$lib/modules/spitfire';
   import { accountStore } from '$lib/storage';
   import { accountDataCache, brShopCache, ownedItemsCache, type AccountDataCache } from '$lib/stores';
   import { calculateVbucks, formatRemainingDuration, handleError } from '$lib/utils';
@@ -79,7 +79,7 @@
 
     try {
       if (!$brShopCache || forceRefresh) {
-        const response = await SpitfireAPI.fetchShop();
+        const response = await fetchShopData();
         brShopCache.set(response);
       }
 
@@ -115,9 +115,9 @@
   async function fetchAccountData() {
     const account = $activeAccount!;
     const [athena, commonCore, friends] = await Promise.allSettled([
-      MCP.queryProfile(account, 'athena'),
-      MCP.queryProfile(account, 'common_core'),
-      Friends.getFriends(account)
+      queryProfile(account, 'athena'),
+      queryProfile(account, 'common_core'),
+      getFriends(account)
     ]);
 
     let accountData: AccountDataCache = {
@@ -154,7 +154,7 @@
     }
 
     if (friends.status === 'fulfilled') {
-      const accountsData = await Lookup.fetchByIds(
+      const accountsData = await fetchUsersByIds(
         account,
         friends.value.map((friend) => friend.accountId)
       );

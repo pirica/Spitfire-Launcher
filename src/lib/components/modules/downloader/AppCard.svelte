@@ -12,11 +12,18 @@
   import WrenchIcon from '@lucide/svelte/icons/wrench';
   import XIcon from '@lucide/svelte/icons/x';
   import { t } from '$lib/i18n';
-  import { DownloadManager } from '$lib/modules/download.svelte.js';
-  import { Legendary } from '$lib/modules/legendary';
+  import {
+    addToQueue,
+    downloadingAppId,
+    downloadProgress,
+    downloadQueue,
+    isInQueue,
+    removeFromQueue
+  } from '$lib/modules/download.svelte.js';
+  import { launchLegendaryApp, verifyLegendaryApp } from '$lib/modules/legendary';
   import { downloaderStore } from '$lib/storage';
   import { ownedAppsCache, runningAppIds } from '$lib/stores';
-  import { Tauri } from '$lib/tauri';
+  import { stopApp as stopTrackedApp } from '$lib/tauri';
   import { bytesToSize, handleError, sleep } from '$lib/utils';
   import AppDropdown from '$components/modules/downloader/AppDropdown.svelte';
   import { Button } from '$components/ui/button';
@@ -31,7 +38,7 @@
   let { appId, installDialogAppId = $bindable(), uninstallDialogAppId = $bindable() }: Props = $props();
 
   const app = $derived($ownedAppsCache.find((x) => x.id === appId)!);
-  const isInstalling = $derived(DownloadManager.downloadingAppId === app.id);
+  const isInstalling = $derived($downloadingAppId === app.id);
   const isFavorited = $derived($downloaderStore.favoriteApps?.includes(app.id) ?? false);
   const isHidden = $derived($downloaderStore.hiddenApps?.includes(app.id) ?? false);
 
@@ -45,7 +52,7 @@
     isLaunching = true;
 
     try {
-      await Legendary.launch(app.id);
+      await launchLegendaryApp(app.id);
     } catch (error) {
       handleError({ error, message: $t('library.app.failedToLaunch', { name: app.title }) });
     } finally {
@@ -57,7 +64,7 @@
     isStopping = true;
 
     try {
-      await Tauri.stopApp({ appId: app.id });
+      await stopTrackedApp({ appId: app.id });
       toast.success($t('library.app.stopped', { name: app.title }));
     } catch (error) {
       handleError({ error, message: $t('library.app.failedToStop', { name: app.title }) });
@@ -97,20 +104,20 @@
   }
 
   async function installApp() {
-    await DownloadManager.addToQueue(app);
+    await addToQueue(app);
   }
 
   async function verifyAndRepair() {
     isVerifying = true;
 
     try {
-      const { requiresRepair } = await Legendary.verify(app.id);
+      const { requiresRepair } = await verifyLegendaryApp(app.id);
       if (!requiresRepair) {
         return toast.success($t('library.app.verified', { name: app.title }));
       }
 
       toast.success($t('library.app.requiresRepair', { name: app.title }));
-      await DownloadManager.addToQueue(app);
+      await addToQueue(app);
     } catch (error) {
       handleError({ error, message: $t('library.app.failedToVerify', { name: app.title }) });
     } finally {
@@ -174,7 +181,7 @@
     </div>
 
     <div class="flex">
-      {#if app.installed && !DownloadManager.isInQueue(app.id)}
+      {#if app.installed && !isInQueue(app.id)}
         {#if app.hasUpdate}
           {@render UpdateButton()}
         {:else if app.requiresRepair}
@@ -184,7 +191,7 @@
         {:else}
           {@render PlayButton()}
         {/if}
-      {:else if DownloadManager.isInQueue(app.id) && !isInstalling && DownloadManager.queue.length > 1}
+      {:else if isInQueue(app.id) && !isInstalling && $downloadQueue.length > 1}
         {@render RemoveFromQueueButton()}
       {:else}
         {@render InstallButton()}
@@ -255,7 +262,7 @@
 {#snippet RemoveFromQueueButton()}
   <Button
     class="flex min-w-0 flex-1 items-center justify-center gap-1.5"
-    onclick={() => DownloadManager.removeFromQueue(app.id)}
+    onclick={() => removeFromQueue(app.id)}
     size="sm"
     title={$t('library.app.removeFromQueue.long')}
     variant="secondary"
@@ -288,8 +295,8 @@
         {$t('library.app.install')}
       {/if}
 
-      {#if isInstalling && DownloadManager.progress.percent}
-        ({Math.floor(DownloadManager.progress.percent)}%)
+      {#if isInstalling && $downloadProgress.percent}
+        ({Math.floor($downloadProgress.percent)}%)
       {/if}
     </span>
   </Button>

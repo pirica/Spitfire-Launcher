@@ -15,7 +15,7 @@
   import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { platform } from '@tauri-apps/plugin-os';
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
-  import { MCP } from '$lib/modules/mcp';
+  import { composeMCP } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import JsonNode from '$components/modules/mcp/JsonNode.svelte';
@@ -100,7 +100,7 @@
     result = undefined;
 
     try {
-      const response = await MCP.compose(
+      const response = await composeMCP(
         $activeAccount,
         selectedOperation as MCPOperation,
         selectedProfile,

@@ -5,9 +5,10 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner';
   import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+  import { defaultClient } from '$lib/constants/clients';
   import { t } from '$lib/i18n';
-  import { AuthSession } from '$lib/modules/auth-session';
-  import { Authentication } from '$lib/modules/authentication';
+  import { getCachedToken } from '$lib/modules/auth-session';
+  import { getExchangeCodeUsingAccessToken } from '$lib/modules/authentication';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -18,8 +19,8 @@
 
     const account = accountStore.getActive()!;
     try {
-      const accessToken = await AuthSession.new(account).getAccessToken(true);
-      const { code } = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
+      const accessToken = await getCachedToken(account, defaultClient, true);
+      const { code } = await getExchangeCodeUsingAccessToken(accessToken);
 
       await writeText(code);
       toast.success($t('exchangeCode.generated'));

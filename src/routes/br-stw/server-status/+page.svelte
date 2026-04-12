@@ -24,8 +24,8 @@
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import RefreshCwIcon from '@lucide/svelte/icons/refresh-cw';
   import { language, t } from '$lib/i18n';
-  import { Notification } from '$lib/modules/notification';
-  import { ServerStatus } from '$lib/modules/server-status';
+  import { requestNotificationPermission, sendNotificationMessage } from '$lib/modules/notification';
+  import { getLightswitch, getStatusPage, getWaitingRoom } from '$lib/modules/server-status';
   import { accountStore } from '$lib/storage';
   import { formatRemainingDuration, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -46,10 +46,7 @@
           notifyUser = false;
           clearInterval(notifyUserIntervalId);
 
-          await Notification.sendNotification(
-            $t('serverStatus.notification.message'),
-            $t('serverStatus.notification.title')
-          );
+          await sendNotificationMessage($t('serverStatus.notification.message'), $t('serverStatus.notification.title'));
         }
       }, 15_000);
     } else {
@@ -64,9 +61,9 @@
 
     try {
       const [lightswitchData, queueData, statusPageData] = await Promise.all([
-        ServerStatus.getLightswitch(),
-        ServerStatus.getWaitingRoom(),
-        ServerStatus.getStatusPage()
+        getLightswitch(),
+        getWaitingRoom(),
+        getStatusPage()
       ]);
 
       lastUpdated = new Date();
@@ -179,7 +176,7 @@
 
         <Switch
           onCheckedChange={() => {
-            Notification.requestPermission();
+            requestNotificationPermission();
           }}
           bind:checked={notifyUser}
         />

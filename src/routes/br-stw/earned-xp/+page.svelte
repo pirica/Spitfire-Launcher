@@ -14,7 +14,7 @@
 
 <script lang="ts">
   import { language, t } from '$lib/i18n';
-  import { MCP } from '$lib/modules/mcp';
+  import { queryProfile } from '$lib/modules/mcp';
   import { getAccountsFromSelection, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
   import AccountCombobox from '$components/ui/AccountCombobox.svelte';
@@ -37,8 +37,8 @@
         xpStates.push(state);
 
         const [athena, campaign] = await Promise.allSettled([
-          MCP.queryProfile(account, 'athena'),
-          MCP.queryProfile(account, 'campaign')
+          queryProfile(account, 'athena'),
+          queryProfile(account, 'campaign')
         ]);
 
         if (athena.status === 'fulfilled') {

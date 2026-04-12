@@ -14,7 +14,11 @@
     launcherAppClient2
   } from '$lib/constants/clients';
   import { t } from '$lib/i18n';
-  import { Authentication } from '$lib/modules/authentication';
+  import {
+    getAccessTokenUsingDeviceAuth,
+    getAccessTokenUsingExchangeCode,
+    getExchangeCodeUsingAccessToken
+  } from '$lib/modules/authentication';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -39,13 +43,13 @@
 
     const account = accountStore.getActive()!;
     try {
-      let accessTokenData = await Authentication.getAccessTokenUsingDeviceAuth(account, selectedTokenType);
+      let accessTokenData = await getAccessTokenUsingDeviceAuth(account, selectedTokenType);
 
       if (selectedClient !== defaultClient.clientId) {
-        const { code } = await Authentication.getExchangeCodeUsingAccessToken(accessTokenData.access_token);
+        const { code } = await getExchangeCodeUsingAccessToken(accessTokenData.access_token);
 
         const client = allClients.find((client) => client.clientId === selectedClient);
-        accessTokenData = await Authentication.getAccessTokenUsingExchangeCode(code, client, selectedTokenType);
+        accessTokenData = await getAccessTokenUsingExchangeCode(code, client, selectedTokenType);
       }
 
       await writeText(accessTokenData.access_token);

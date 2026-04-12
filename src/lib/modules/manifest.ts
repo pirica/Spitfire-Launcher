@@ -24,42 +24,39 @@ export type EpicManifest = {
 };
 
 const manifestsDir = 'C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests';
+let fortniteManifestCache: EpicManifest | null = null;
 
-export class Manifest {
-  private static fortnite: EpicManifest | null = null;
+export async function getFortniteManifest() {
+  if (fortniteManifestCache) return fortniteManifestCache;
 
-  static async getFortniteManifest() {
-    if (this.fortnite) return this.fortnite;
+  fortniteManifestCache = await getManifestByName('fortnite');
+  return fortniteManifestCache;
+}
 
-    this.fortnite = await this.getManifestByName('fortnite');
-    return this.fortnite;
-  }
+export async function getManifestByName(name: string): Promise<EpicManifest | null> {
+  if (platform() !== 'windows') return null;
 
-  static async getManifestByName(name: string): Promise<EpicManifest | null> {
-    if (platform() !== 'windows') return null;
+  const entries = await readDir(manifestsDir);
+  for (const entry of entries) {
+    if (!entry.name.endsWith('.item')) continue;
 
-    const entries = await readDir(manifestsDir);
-    for (const entry of entries) {
-      if (!entry.name.endsWith('.item')) continue;
+    try {
+      const raw = JSON.parse(await readTextFile(await path.join(manifestsDir, entry.name))) as EpicManifestRaw;
+      if (raw.DisplayName.toLowerCase() !== name.toLowerCase()) continue;
 
-      try {
-        const raw = JSON.parse(await readTextFile(await path.join(manifestsDir, entry.name))) as EpicManifestRaw;
-        if (raw.DisplayName.toLowerCase() !== name.toLowerCase()) continue;
-
-        return {
-          displayName: raw.DisplayName,
-          appVersionString: raw.AppVersionString?.trim() ?? '',
-          namespace: raw.CatalogNamespace,
-          launchCommand: raw.LaunchCommand?.trim() ?? '',
-          installLocation: raw.InstallLocation,
-          launchExecutable: raw.LaunchExecutable,
-          executableLocation: raw.LaunchExecutable
-        };
-      } catch (error) {
-        logger.warn('Failed to read manifest file', { entry: entry.name, error });
-      }
+      return {
+        displayName: raw.DisplayName,
+        appVersionString: raw.AppVersionString?.trim() ?? '',
+        namespace: raw.CatalogNamespace,
+        launchCommand: raw.LaunchCommand?.trim() ?? '',
+        installLocation: raw.InstallLocation,
+        launchExecutable: raw.LaunchExecutable,
+        executableLocation: raw.LaunchExecutable
+      };
+    } catch (error) {
+      logger.warn('Failed to read manifest file', { entry: entry.name, error });
     }
-
-    return null;
   }
+
+  return null;
 }

@@ -10,7 +10,7 @@
   import MonitorIcon from '@lucide/svelte/icons/monitor';
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import { language, t } from '$lib/i18n';
-  import { DeviceAuth } from '$lib/modules/device-auth';
+  import { deleteDeviceAuth as deleteDeviceAuthRequest } from '$lib/modules/device-auth';
   import { accountStore, deviceAuthsStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import { Button } from '$components/ui/button';
@@ -50,7 +50,7 @@
         // This will also delete the device auth
         accountStore.remove($activeAccount.accountId);
       } else {
-        await DeviceAuth.delete($activeAccount, deviceId);
+        await deleteDeviceAuthRequest($activeAccount, deviceId);
       }
 
       allDeviceAuths[$activeAccount.accountId] = allDeviceAuths[$activeAccount.accountId].filter(

@@ -1,15 +1,15 @@
 import { toast } from 'svelte-sonner';
-import { get } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import type { z } from 'zod';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { t } from '$lib/i18n';
 import { getChildLogger } from '$lib/logger';
-import { configPath, Legendary } from '$lib/modules/legendary';
-import { Notification } from '$lib/modules/notification';
+import { configPath, getLegendaryAccount } from '$lib/modules/legendary';
+import { sendNotificationMessage } from '$lib/modules/notification';
 import type { queueItemSchema } from '$lib/schemas/settings';
 import { downloaderStore } from '$lib/storage';
 import { ownedAppsCache } from '$lib/stores';
-import { Tauri, type LegendaryStreamEvent } from '$lib/tauri';
+import { startLegendaryStream, stopLegendaryStream, type LegendaryStreamEvent } from '$lib/tauri';
 import type { ParsedApp } from '$types/legendary';
 
 const logger = getChildLogger('DownloadManager');
@@ -32,416 +32,412 @@ export type DownloadProgress = {
   diskWriteSpeed: number;
 };
 
-class DownloadManagerC {
-  downloadingAppId = $state<string | null>(null);
-  progress = $state<Partial<DownloadProgress>>({});
-  queue = $state<QueueItem[]>([]);
+export const downloadingAppId = writable<string | null>(null);
+export const downloadProgress = writable<Partial<DownloadProgress>>({});
+export const downloadQueue = writable<QueueItem[]>([]);
 
-  private activeDownload: {
-    streamId: string;
-    unlisten: UnlistenFn;
-    callbacks: DownloadCallbacks;
-    cancelled?: boolean;
-    paused?: boolean;
-  } | null = null;
+let activeDownload: {
+  streamId: string;
+  unlisten: UnlistenFn;
+  callbacks: DownloadCallbacks;
+  cancelled?: boolean;
+  paused?: boolean;
+} | null = null;
 
-  async init() {
-    const downloaderSettings = downloaderStore.get();
-    const accountId = await Legendary.getAccount();
-    const queue = accountId ? downloaderSettings.queue?.[accountId] : null;
+export async function initDownloader() {
+  const downloaderSettings = downloaderStore.get();
+  const accountId = await getLegendaryAccount();
+  const savedQueue = accountId ? downloaderSettings.queue?.[accountId] : null;
 
-    if (!downloaderSettings.queue || !accountId || !queue?.length) {
-      return;
-    }
-
-    for (const item of queue) {
-      if (item.status === 'downloading') {
-        item.status = 'paused';
-      }
-    }
-
-    this.queue = downloaderSettings.queue[accountId];
-    await this.processQueue(true);
+  if (!downloaderSettings.queue || !accountId || !savedQueue?.length) {
+    return;
   }
 
-  async addToQueue(app: ParsedApp, installTags: string[] = []) {
-    const existingItem = this.queue.find(({ item }) => item.id === app.id);
-
-    if (existingItem && ['queued', 'downloading', 'paused'].includes(existingItem.status)) {
-      throw new Error('App is already in the download queue');
+  for (const item of savedQueue) {
+    if (item.status === 'downloading') {
+      item.status = 'paused';
     }
-
-    this.queue = [
-      // To remove queue items with completed or failed status
-      ...this.queue.filter(({ item }) => item.id !== app.id),
-      {
-        status: 'queued',
-        item: app,
-        installTags,
-        addedAt: Date.now()
-      }
-    ];
-
-    await this.saveQueueToFile();
-    await this.processQueue();
   }
 
-  async removeFromQueue(appId: string) {
-    if (this.downloadingAppId === appId) {
-      await this.cancelDownload();
-    }
+  downloadQueue.set(downloaderSettings.queue[accountId]);
+  await processQueue(true);
+}
 
-    this.queue = this.queue.filter(({ item }) => item.id !== appId);
-    await this.saveQueueToFile();
+export async function addToQueue(app: ParsedApp, installTags: string[] = []) {
+  const currentQueue = get(downloadQueue);
+  const existingItem = currentQueue.find(({ item }) => item.id === app.id);
+
+  if (existingItem && ['queued', 'downloading', 'paused'].includes(existingItem.status)) {
+    throw new Error('App is already in the download queue');
   }
 
-  async moveQueueItem(appId: string, direction: 'up' | 'down') {
-    const queueIndexes = this.queue
-      .map((item, index) => ({ item, index }))
-      .filter(({ item }) => item.status === 'queued')
-      .map(({ index }) => index);
-
-    const currentQueuePosition = queueIndexes.findIndex((i) => this.queue[i].item.id === appId);
-    if (currentQueuePosition === -1) return;
-
-    const newQueuePosition = direction === 'up' ? currentQueuePosition - 1 : currentQueuePosition + 1;
-
-    if (newQueuePosition < 0 || newQueuePosition >= queueIndexes.length) {
-      return;
+  downloadQueue.set([
+    // Removes queue items with `completed` or `failed` status
+    ...currentQueue.filter(({ item }) => item.id !== app.id),
+    {
+      status: 'queued',
+      item: app,
+      installTags,
+      addedAt: Date.now()
     }
+  ]);
 
-    const currentIndex = queueIndexes[currentQueuePosition];
-    const targetIndex = queueIndexes[newQueuePosition];
+  await saveQueueToFile();
+  await processQueue();
+}
 
-    [this.queue[currentIndex], this.queue[targetIndex]] = [this.queue[targetIndex], this.queue[currentIndex]];
-
-    await this.saveQueueToFile();
+export async function removeFromQueue(appId: string) {
+  if (get(downloadingAppId) === appId) {
+    await cancelDownload();
   }
 
-  isInQueue(appId: string): boolean {
-    return this.queue.some(
-      ({ item, status }) => item.id === appId && ['queued', 'downloading', 'paused'].includes(status)
-    );
+  downloadQueue.update((q) => q.filter(({ item }) => item.id !== appId));
+  await saveQueueToFile();
+}
+
+export async function moveQueueItem(appId: string, direction: 'up' | 'down') {
+  const currentQueue = get(downloadQueue);
+  const queueIndexes = currentQueue
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item.status === 'queued')
+    .map(({ index }) => index);
+
+  const currentQueuePosition = queueIndexes.findIndex((i) => currentQueue[i].item.id === appId);
+  if (currentQueuePosition === -1) return;
+
+  const newQueuePosition = direction === 'up' ? currentQueuePosition - 1 : currentQueuePosition + 1;
+
+  if (newQueuePosition < 0 || newQueuePosition >= queueIndexes.length) {
+    return;
   }
 
-  async processQueue(processPaused = false) {
-    const pausedItem = this.queue.find(({ status }) => status === 'paused');
+  const currentIndex = queueIndexes[currentQueuePosition];
+  const targetIndex = queueIndexes[newQueuePosition];
 
-    let item: QueueItem | undefined;
-    if (pausedItem) {
-      item = processPaused ? pausedItem : undefined;
-    } else {
-      item = this.queue.find(({ status }) => status === 'queued');
-    }
+  downloadQueue.update((q) => {
+    [q[currentIndex], q[targetIndex]] = [q[targetIndex], q[currentIndex]];
+    return [...q];
+  });
 
-    if (!item || (this.downloadingAppId && item.status !== 'paused')) return;
+  await saveQueueToFile();
+}
 
-    const app = item.item;
-    const type: DownloadType = app.requiresRepair ? 'repair' : app.hasUpdate ? 'update' : 'install';
+export function isInQueue(appId: string) {
+  return get(downloadQueue).some(
+    ({ item, status }) => item.id === appId && ['queued', 'downloading', 'paused'].includes(status)
+  );
+}
 
-    this.downloadingAppId = app.id;
+export async function processQueue(processPaused = false) {
+  const currentQueue = get(downloadQueue);
+  const pausedItem = currentQueue.find(({ status }) => status === 'paused');
 
-    if (item.status !== 'paused') {
-      this.progress = {
-        actualDownloadSize: 0,
-        currentDownloadSize: 0,
-        percent: 0,
-        etaMs: 0,
-        downloaded: 0,
-        downloadSpeed: 0,
-        diskWriteSpeed: 0
-      };
-    }
+  let item: QueueItem | undefined;
+  if (pausedItem) {
+    item = processPaused ? pausedItem : undefined;
+  } else {
+    item = currentQueue.find(({ status }) => status === 'queued');
+  }
 
-    item.startedAt = Date.now();
-    await this.setItemStatus(item, 'downloading');
+  const currentDownloadingAppId = get(downloadingAppId);
+  if (!item || (currentDownloadingAppId && item.status !== 'paused')) return;
 
-    try {
-      await this.start(app, type, item.installTags, {
-        onProgress: (progress: Partial<DownloadProgress>) => {
-          const next = {
-            ...this.progress,
-            ...progress
-          };
+  const app = item.item;
+  const type: DownloadType = app.requiresRepair ? 'repair' : app.hasUpdate ? 'update' : 'install';
 
-          // The progress percent from Legendary seems to be very inaccurate
-          // So we calculate it ourselves
+  downloadingAppId.set(app.id);
+
+  if (item.status !== 'paused') {
+    downloadProgress.set({
+      actualDownloadSize: 0,
+      currentDownloadSize: 0,
+      percent: 0,
+      etaMs: 0,
+      downloaded: 0,
+      downloadSpeed: 0,
+      diskWriteSpeed: 0
+    });
+  }
+
+  item.startedAt = Date.now();
+  await setItemStatus(item, 'downloading');
+
+  try {
+    await start(app, type, item.installTags, {
+      onProgress: (incoming: Partial<DownloadProgress>) => {
+        downloadProgress.update((current) => {
+          const next = { ...current, ...incoming };
+
           next.percent =
             next.actualDownloadSize && next.downloaded && next.actualDownloadSize > 0
               ? (next.downloaded / next.actualDownloadSize) * 100
               : 0;
 
-          this.progress = next;
-        },
-        onComplete: async (success) => {
-          const downloaderSettings = downloaderStore.get();
+          return next;
+        });
+      },
+      onComplete: async (success) => {
+        const downloaderSettings = downloaderStore.get();
 
-          if (success) {
-            app.installed = true;
-            app.hasUpdate = false;
-            app.requiresRepair = false;
+        if (success) {
+          app.installed = true;
+          app.hasUpdate = false;
+          app.requiresRepair = false;
 
-            item.completedAt = Date.now();
+          item.completedAt = Date.now();
 
-            const notificationMessage = get(t)(
-              type === 'repair'
-                ? 'library.app.repaired'
-                : type === 'update'
-                  ? 'library.app.updated'
-                  : 'library.app.installed',
-              { name: app.title }
-            );
+          const notificationMessage = get(t)(
+            type === 'repair'
+              ? 'library.app.repaired'
+              : type === 'update'
+                ? 'library.app.updated'
+                : 'library.app.installed',
+            { name: app.title }
+          );
 
-            toast.success(notificationMessage);
+          toast.success(notificationMessage);
 
-            if (downloaderSettings.sendNotifications) {
-              Notification.sendNotification(notificationMessage).catch((error) => {
-                logger.error('Failed to send download notification', { error });
-              });
+          if (downloaderSettings.sendNotifications) {
+            sendNotificationMessage(notificationMessage).catch((error) => {
+              logger.error('Failed to send download notification', { error });
+            });
+          }
+
+          ownedAppsCache.update((apps) => {
+            const appIndex = apps.findIndex((x) => x.id === app.id);
+            if (appIndex !== -1) {
+              apps[appIndex] = app;
+            } else {
+              apps.push(app);
             }
 
-            ownedAppsCache.update((apps) => {
-              const appIndex = apps.findIndex((x) => x.id === app.id);
-              if (appIndex !== -1) {
-                apps[appIndex] = app;
-              } else {
-                apps.push(app);
-              }
+            return apps;
+          });
 
-              return apps;
-            });
-
-            await this.setItemStatus(item, 'completed');
-          } else if (!this.activeDownload?.cancelled && !this.activeDownload?.paused) {
-            await this.handleDownloadError(item, type);
-          }
-
-          if (!this.activeDownload?.paused) {
-            await this.cleanupActiveDownload();
-          }
-        },
-        onError: async (error) => {
-          await this.handleDownloadError(item, type, error);
-          await this.cleanupActiveDownload();
-        }
-      });
-    } catch (error) {
-      await this.handleDownloadError(item, type, error);
-      await this.cleanupActiveDownload();
-    }
-  }
-
-  async cancelDownload() {
-    if (!this.activeDownload) return;
-
-    this.activeDownload.cancelled = true;
-
-    // If it was paused, the stream is already stopped so we just clean up
-    if (this.activeDownload.paused) {
-      this.queue = this.queue.filter((q) => q.item.id !== this.downloadingAppId);
-      await this.cleanupActiveDownload();
-    } else {
-      await Tauri.stopLegendaryStream({
-        streamId: this.activeDownload.streamId,
-        forceKillAll: true
-      });
-    }
-  }
-
-  async pauseDownload() {
-    const activeDownload = this.activeDownload;
-    if (!activeDownload || activeDownload.paused) return;
-
-    activeDownload.paused = true;
-
-    await Tauri.stopLegendaryStream({
-      streamId: activeDownload.streamId,
-      forceKillAll: true
-    });
-
-    activeDownload.unlisten();
-    activeDownload.streamId = '';
-
-    const item = this.queue.find(({ item }) => item.id === this.downloadingAppId);
-    if (item) {
-      await this.setItemStatus(item, 'paused');
-    }
-  }
-
-  resumeDownload() {
-    return this.processQueue(true);
-  }
-
-  private async handleDownloadError(item: QueueItem, type: DownloadType, error?: unknown) {
-    const app = item.item;
-
-    if (error) logger.error('Download error', { id: app.id, error });
-    const errorMessage = get(t)(
-      type === 'repair'
-        ? 'library.app.failedToRepair'
-        : type === 'update'
-          ? 'library.app.failedToUpdate'
-          : 'library.app.failedToInstall',
-      { name: app.title }
-    );
-
-    toast.error(errorMessage);
-
-    item.completedAt = Date.now();
-    await this.setItemStatus(item, 'failed');
-  }
-
-  private async start(
-    app: ParsedApp,
-    type: DownloadType,
-    installTags: string[] = [],
-    callbacks: DownloadCallbacks = {}
-  ) {
-    const settings = downloaderStore.get();
-    const streamId = `${type}_${app.id}`;
-    const args = [type, app.id, '-y', '--base-path', settings.downloadPath!];
-
-    if (type === 'install') {
-      args.push('--skip-dlcs');
-    }
-
-    if (installTags?.length) {
-      for (const tag of installTags) {
-        args.push('--install-tag', tag);
-      }
-    } else {
-      args.push('--skip-sdl');
-    }
-
-    if (settings.noHTTPS) {
-      args.push('--no-https');
-    }
-
-    const unlisten = await listen<LegendaryStreamEvent>(`legendary_stream:${streamId}`, (event) => {
-      const payload = event.payload;
-
-      logger.debug('Stream event', {
-        streamId: payload.stream_id,
-        type: payload.event_type,
-        data: payload.data?.slice(-512),
-        code: payload.code,
-        signal: payload.signal
-      });
-
-      switch (payload.event_type) {
-        case 'stdout':
-        case 'stderr': {
-          const result = this.parseDownloadOutput(payload.data);
-          if (Object.keys(result).length) {
-            callbacks.onProgress?.(result);
-          }
-          break;
+          await setItemStatus(item, 'completed');
+        } else if (!activeDownload?.cancelled && !activeDownload?.paused) {
+          await handleDownloadError(item, type);
         }
 
-        case 'terminated': {
-          callbacks.onComplete?.(payload.code === 0, payload.code);
-          break;
+        if (!activeDownload?.paused) {
+          await cleanupActiveDownload();
         }
-
-        case 'error': {
-          callbacks.onError?.(payload.data);
-          break;
-        }
+      },
+      onError: async (error) => {
+        await handleDownloadError(item, type, error);
+        await cleanupActiveDownload();
       }
     });
-
-    await Tauri.startLegendaryStream({ configPath, args, streamId });
-
-    this.activeDownload = {
-      streamId,
-      unlisten,
-      callbacks
-    };
-
-    return streamId;
-  }
-
-  private setItemStatus(item: QueueItem, status: QueueItem['status']) {
-    item.status = status;
-    this.queue = [...this.queue];
-
-    return this.saveQueueToFile();
-  }
-
-  private async saveQueueToFile() {
-    const accountId = (await Legendary.getAccount())!;
-    return downloaderStore.set((settings) => {
-      settings.queue = {
-        ...settings.queue,
-        [accountId]: $state.snapshot(this.queue)
-      };
-
-      return settings;
-    });
-  }
-
-  private async cleanupActiveDownload() {
-    if (!this.activeDownload?.paused) {
-      this.activeDownload?.unlisten();
-    }
-
-    this.activeDownload = null;
-    this.downloadingAppId = null;
-    this.progress = {};
-
-    try {
-      await this.processQueue();
-    } catch (error) {
-      logger.error('Failed to process download queue', { error });
-    }
-  }
-
-  private parseDownloadOutput(output: string) {
-    const MiBtoBytes = (mib: string) => Number.parseFloat(mib) * 1024 * 1024;
-    const result: Partial<DownloadProgress> = {};
-
-    let match = output.match(/Download size: ([\d.]+) MiB/);
-    if (match) {
-      result.currentDownloadSize = MiBtoBytes(match[1]);
-
-      if (!this.progress.actualDownloadSize) {
-        result.actualDownloadSize = result.currentDownloadSize;
-      }
-
-      return result;
-    }
-
-    match = output.match(/ETA: (\d{2}:\d{2}:\d{2})/);
-    if (match) {
-      const [h, m, s] = match[1].split(':').map(Number);
-      result.etaMs = (h * 3600 + m * 60 + s) * 1000;
-      return result;
-    }
-
-    match = output.match(/Downloaded: ([\d.]+) MiB/);
-    if (match) {
-      const downloaded = MiBtoBytes(match[1]);
-      const totalDownloaded = downloaded + this.progress.actualDownloadSize! - this.progress.currentDownloadSize!;
-
-      result.percent = (totalDownloaded / this.progress.actualDownloadSize!) * 100;
-      result.downloaded = totalDownloaded;
-      return result;
-    }
-
-    match = output.match(/Download\s+- ([\d.]+) MiB\/s \(raw\)/);
-    if (match) {
-      result.downloadSpeed = MiBtoBytes(match[1]);
-      return result;
-    }
-
-    match = output.match(/Disk\s+- ([\d.]+) MiB\/s \(write\)/);
-    if (match) {
-      result.diskWriteSpeed = MiBtoBytes(match[1]);
-      return result;
-    }
-
-    return {};
+  } catch (error) {
+    await handleDownloadError(item, type, error);
+    await cleanupActiveDownload();
   }
 }
 
-export const DownloadManager = new DownloadManagerC();
+export async function cancelDownload() {
+  if (!activeDownload) return;
+
+  activeDownload.cancelled = true;
+
+  // If it's paused, the stream has already been stopped so just clean it up
+  if (activeDownload.paused) {
+    const currentDownloadingAppId = get(downloadingAppId);
+    downloadQueue.update((q) => q.filter((qi) => qi.item.id !== currentDownloadingAppId));
+    await cleanupActiveDownload();
+  } else {
+    await stopLegendaryStream({
+      streamId: activeDownload.streamId,
+      forceKillAll: true
+    });
+  }
+}
+
+export async function pauseDownload() {
+  if (!activeDownload || activeDownload.paused) return;
+
+  activeDownload.paused = true;
+
+  await stopLegendaryStream({
+    streamId: activeDownload.streamId,
+    forceKillAll: true
+  });
+
+  activeDownload.unlisten();
+  activeDownload.streamId = '';
+
+  const currentDownloadingAppId = get(downloadingAppId);
+  const item = get(downloadQueue).find(({ item }) => item.id === currentDownloadingAppId);
+  if (item) {
+    await setItemStatus(item, 'paused');
+  }
+}
+
+export function resumeDownload() {
+  return processQueue(true);
+}
+
+async function handleDownloadError(item: QueueItem, type: DownloadType, error?: unknown) {
+  const app = item.item;
+
+  if (error) logger.error('Download error', { id: app.id, error });
+  const errorMessage = get(t)(
+    type === 'repair'
+      ? 'library.app.failedToRepair'
+      : type === 'update'
+        ? 'library.app.failedToUpdate'
+        : 'library.app.failedToInstall',
+    { name: app.title }
+  );
+
+  toast.error(errorMessage);
+
+  item.completedAt = Date.now();
+  await setItemStatus(item, 'failed');
+}
+
+async function start(
+  app: ParsedApp,
+  type: DownloadType,
+  installTags: string[] = [],
+  callbacks: DownloadCallbacks = {}
+) {
+  const settings = downloaderStore.get();
+  const streamId = `${type}_${app.id}`;
+  const args = [type, app.id, '-y', '--base-path', settings.downloadPath!];
+
+  if (type === 'install') {
+    args.push('--skip-dlcs');
+  }
+
+  if (installTags?.length) {
+    for (const tag of installTags) {
+      args.push('--install-tag', tag);
+    }
+  } else {
+    args.push('--skip-sdl');
+  }
+
+  if (settings.noHTTPS) {
+    args.push('--no-https');
+  }
+
+  const unlisten = await listen<LegendaryStreamEvent>(`legendary_stream:${streamId}`, (event) => {
+    const payload = event.payload;
+
+    logger.debug('Stream event', {
+      streamId: payload.stream_id,
+      type: payload.event_type,
+      data: payload.data?.slice(-512),
+      code: payload.code,
+      signal: payload.signal
+    });
+
+    switch (payload.event_type) {
+      case 'stdout':
+      case 'stderr': {
+        const result = parseDownloadOutput(payload.data);
+        if (Object.keys(result).length) {
+          callbacks.onProgress?.(result);
+        }
+        break;
+      }
+
+      case 'terminated': {
+        callbacks.onComplete?.(payload.code === 0, payload.code);
+        break;
+      }
+
+      case 'error': {
+        callbacks.onError?.(payload.data);
+        break;
+      }
+    }
+  });
+
+  await startLegendaryStream({ configPath, args, streamId });
+  activeDownload = { streamId, unlisten, callbacks };
+  return streamId;
+}
+
+function setItemStatus(item: QueueItem, status: QueueItem['status']) {
+  item.status = status;
+  downloadQueue.update((q) => [...q]);
+
+  return saveQueueToFile();
+}
+
+async function saveQueueToFile() {
+  const accountId = (await getLegendaryAccount())!;
+  return downloaderStore.set((settings) => {
+    settings.queue = {
+      ...settings.queue,
+      [accountId]: get(downloadQueue)
+    };
+
+    return settings;
+  });
+}
+
+async function cleanupActiveDownload() {
+  if (!activeDownload?.paused) {
+    activeDownload?.unlisten();
+  }
+
+  activeDownload = null;
+  downloadingAppId.set(null);
+  downloadProgress.set({});
+
+  try {
+    await processQueue();
+  } catch (error) {
+    logger.error('Failed to process download queue', { error });
+  }
+}
+
+function parseDownloadOutput(output: string) {
+  const MiBtoBytes = (mib: string) => Number.parseFloat(mib) * 1024 * 1024;
+  const result: Partial<DownloadProgress> = {};
+  const currentProgress = get(downloadProgress);
+
+  let match = output.match(/Download size: ([\d.]+) MiB/);
+  if (match) {
+    result.currentDownloadSize = MiBtoBytes(match[1]);
+
+    if (!currentProgress.actualDownloadSize) {
+      result.actualDownloadSize = result.currentDownloadSize;
+    }
+
+    return result;
+  }
+
+  match = output.match(/ETA: (\d{2}:\d{2}:\d{2})/);
+  if (match) {
+    const [h, m, s] = match[1].split(':').map(Number);
+    result.etaMs = (h * 3600 + m * 60 + s) * 1000;
+    return result;
+  }
+
+  match = output.match(/Downloaded: ([\d.]+) MiB/);
+  if (match) {
+    const downloaded = MiBtoBytes(match[1]);
+    const totalDownloaded = downloaded + currentProgress.actualDownloadSize! - currentProgress.currentDownloadSize!;
+
+    result.percent = (totalDownloaded / currentProgress.actualDownloadSize!) * 100;
+    result.downloaded = totalDownloaded;
+    return result;
+  }
+
+  match = output.match(/Download\s+- ([\d.]+) MiB\/s \(raw\)/);
+  if (match) {
+    result.downloadSpeed = MiBtoBytes(match[1]);
+    return result;
+  }
+
+  match = output.match(/Disk\s+- ([\d.]+) MiB\/s \(write\)/);
+  if (match) {
+    result.diskWriteSpeed = MiBtoBytes(match[1]);
+    return result;
+  }
+
+  return {};
+}

@@ -9,9 +9,10 @@
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import { writeText } from '@tauri-apps/plugin-clipboard-manager';
   import { openUrl } from '@tauri-apps/plugin-opener';
+  import { defaultClient } from '$lib/constants/clients';
   import { t } from '$lib/i18n';
-  import { AuthSession } from '$lib/modules/auth-session';
-  import { Authentication } from '$lib/modules/authentication';
+  import { getCachedToken } from '$lib/modules/auth-session';
+  import { getExchangeCodeUsingAccessToken } from '$lib/modules/authentication';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -50,8 +51,8 @@
   }
 
   async function generateLoginURL() {
-    const accessToken = await AuthSession.new($activeAccount).getAccessToken(true);
-    const exchangeCodeData = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
+    const accessToken = await getCachedToken($activeAccount, defaultClient, true);
+    const exchangeCodeData = await getExchangeCodeUsingAccessToken(accessToken);
     return `https://www.epicgames.com/id/exchange?exchangeCode=${exchangeCodeData.code}`;
   }
 </script>

@@ -1,14 +1,14 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner';
   import { path } from '@tauri-apps/api';
-  import { launcherAppClient2 } from '$lib/constants/clients';
+  import { defaultClient, launcherAppClient2 } from '$lib/constants/clients';
   import { t } from '$lib/i18n';
-  import { AuthSession } from '$lib/modules/auth-session';
-  import { Authentication } from '$lib/modules/authentication';
-  import { Manifest } from '$lib/modules/manifest';
+  import { getCachedToken } from '$lib/modules/auth-session';
+  import { getAccessTokenUsingExchangeCode, getExchangeCodeUsingAccessToken } from '$lib/modules/authentication';
+  import { getFortniteManifest } from '$lib/modules/manifest';
   import { accountStore, settingsStore } from '$lib/storage';
   import { runningAppIds } from '$lib/stores';
-  import { Tauri, type LaunchAppOptions } from '$lib/tauri';
+  import { launchApp, stopApp, type LaunchAppOptions } from '$lib/tauri';
   import { handleError, sleep } from '$lib/utils';
   import { Button } from '$components/ui/button';
 
@@ -42,7 +42,7 @@
 
     try {
       const settings = settingsStore.get();
-      const manifestData = await Manifest.getFortniteManifest();
+      const manifestData = await getFortniteManifest();
       const customPath = settings.app?.gamePath;
 
       let gameDirectory = manifestData?.installLocation;
@@ -59,15 +59,10 @@
       launchData.game_directory = gameDirectory;
       launchData.working_directory = await path.join(gameDirectory, 'FortniteGame/Binaries/Win64');
 
-      const accessToken = await AuthSession.new($activeAccount!).getAccessToken(true);
-      const oldExchangeData = await Authentication.getExchangeCodeUsingAccessToken(accessToken);
-      const launcherAccessTokenData = await Authentication.getAccessTokenUsingExchangeCode(
-        oldExchangeData.code,
-        launcherAppClient2
-      );
-      const launcherExchangeData = await Authentication.getExchangeCodeUsingAccessToken(
-        launcherAccessTokenData.access_token
-      );
+      const accessToken = await getCachedToken($activeAccount!, defaultClient, true);
+      const oldExchangeData = await getExchangeCodeUsingAccessToken(accessToken);
+      const launcherAccessTokenData = await getAccessTokenUsingExchangeCode(oldExchangeData.code, launcherAppClient2);
+      const launcherExchangeData = await getExchangeCodeUsingAccessToken(launcherAccessTokenData.access_token);
 
       launchData.game_parameters = manifestData?.launchCommand.split(' ') || [];
       launchData.user_parameters = settings.app?.launchArguments?.split(' ') || [];
@@ -83,7 +78,7 @@
         `-epicsandboxid=${manifestData?.namespace || 'fn'}`
       ];
 
-      await Tauri.launchApp({ launchData });
+      await launchApp({ launchData });
     } catch (error) {
       handleError({
         error,
@@ -108,7 +103,7 @@
     const toastId = toast.loading($t('launchGame.stopping'));
 
     try {
-      await Tauri.stopApp({ appId: fortniteAppId });
+      await stopApp({ appId: fortniteAppId });
       toast.success($t('launchGame.stopped'), { id: toastId });
     } catch (error) {
       handleError({

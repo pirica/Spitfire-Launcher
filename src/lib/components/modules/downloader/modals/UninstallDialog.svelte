@@ -1,7 +1,7 @@
 <script lang="ts">
   import { toast } from 'svelte-sonner';
   import { t } from '$lib/i18n';
-  import { Legendary } from '$lib/modules/legendary';
+  import { uninstallLegendaryApp } from '$lib/modules/legendary';
   import { ownedAppsCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
   import { Button, buttonVariants } from '$components/ui/button';
@@ -22,7 +22,7 @@
     isDeleting = true;
 
     try {
-      await Legendary.uninstall(app.id);
+      await uninstallLegendaryApp(app.id);
       toast.success($t('library.uninstallConfirmation.uninstalled', { name: app.title }));
     } catch (error) {
       handleError({ error, message: $t('library.uninstallConfirmation.failedToUninstall', { name: app.title }) });

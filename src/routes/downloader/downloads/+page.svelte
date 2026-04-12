@@ -11,7 +11,16 @@
   import XIcon from '@lucide/svelte/icons/x';
   import { language, t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { DownloadManager, type DownloadProgress } from '$lib/modules/download.svelte';
+  import {
+    downloadingAppId,
+    downloadProgress,
+    downloadQueue,
+    moveQueueItem,
+    pauseDownload,
+    removeFromQueue,
+    resumeDownload,
+    type DownloadProgress
+  } from '$lib/modules/download.svelte';
   import { bytesToSize, formatRemainingDuration } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
   import CancelDownloadDialog from '$components/modules/downloader/modals/CancelDownloadDialog.svelte';
@@ -23,14 +32,10 @@
   let isCancelling = $state(false);
   let isTogglingPause = $state(false);
 
-  const currentDownload = $derived(
-    DownloadManager.queue.find(({ item }) => item.id === DownloadManager.downloadingAppId)
-  );
-  const queue = $derived(DownloadManager.queue.filter((item) => item.status === 'queued'));
-  const completed = $derived(
-    DownloadManager.queue.filter((item) => item.status === 'completed' || item.status === 'failed')
-  );
-  const progress = $derived(DownloadManager.progress as DownloadProgress);
+  const currentDownload = $derived($downloadQueue.find(({ item }) => item.id === $downloadingAppId));
+  const queue = $derived($downloadQueue.filter((item) => item.status === 'queued'));
+  const completed = $derived($downloadQueue.filter((item) => item.status === 'completed' || item.status === 'failed'));
+  const progress = $derived($downloadProgress as DownloadProgress);
 
   async function togglePause() {
     if (!currentDownload) return;
@@ -39,9 +44,9 @@
 
     try {
       if (currentDownload.status === 'paused') {
-        await DownloadManager.resumeDownload();
+        await resumeDownload();
       } else {
-        await DownloadManager.pauseDownload();
+        await pauseDownload();
       }
     } catch (error) {
       logger.error('Failed to toggle pause state', { error });
@@ -56,7 +61,7 @@
     isCancelling = true;
 
     try {
-      await DownloadManager.removeFromQueue(currentDownload.item.id);
+      await removeFromQueue(currentDownload.item.id);
     } catch (error) {
       logger.error('Failed to cancel download', { error });
     } finally {
@@ -159,7 +164,7 @@
             <div class="flex items-center gap-2">
               <Button
                 disabled={index === 0}
-                onclick={() => DownloadManager.moveQueueItem(item.id, 'up')}
+                onclick={() => moveQueueItem(item.id, 'up')}
                 size="icon-sm"
                 variant="outline"
               >
@@ -168,14 +173,14 @@
 
               <Button
                 disabled={index === queue.length - 1}
-                onclick={() => DownloadManager.moveQueueItem(item.id, 'down')}
+                onclick={() => moveQueueItem(item.id, 'down')}
                 size="icon-sm"
                 variant="outline"
               >
                 <ChevronDownIcon />
               </Button>
 
-              <Button onclick={() => DownloadManager.removeFromQueue(item.id)} size="icon-sm" variant="outline">
+              <Button onclick={() => removeFromQueue(item.id)} size="icon-sm" variant="outline">
                 <XIcon />
               </Button>
             </div>
@@ -214,7 +219,7 @@
             </div>
 
             <div class="flex items-center gap-2">
-              <Button onclick={() => DownloadManager.removeFromQueue(item.id)} size="icon-sm" variant="outline">
+              <Button onclick={() => removeFromQueue(item.id)} size="icon-sm" variant="outline">
                 <XIcon />
               </Button>
             </div>

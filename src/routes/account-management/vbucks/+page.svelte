@@ -14,7 +14,7 @@
 <script lang="ts">
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { language, t } from '$lib/i18n';
-  import { MCP } from '$lib/modules/mcp';
+  import { queryProfile } from '$lib/modules/mcp';
   import { avatarCache } from '$lib/stores';
   import { calculateVbucks, getAccountsFromSelection, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -38,8 +38,8 @@
         vbucksStates.push(state);
 
         try {
-          const queryProfile = await MCP.queryProfile(account, 'common_core');
-          state.data.vbucksAmount = calculateVbucks(queryProfile);
+          const profileData = await queryProfile(account, 'common_core');
+          state.data.vbucksAmount = calculateVbucks(profileData);
         } catch (error) {
           handleError({ error, message: 'Failed to fetch V-Bucks information', account, toastId: false });
 

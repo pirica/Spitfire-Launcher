@@ -1,12 +1,13 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { createClient, type Agent } from 'stanza';
 import { AsyncLock } from '$lib/async-lock';
+import { defaultClient } from '$lib/constants/clients';
 import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import { EventEmitter } from '$lib/event-emitter';
 import { getChildLogger } from '$lib/logger';
-import { AuthSession } from '$lib/modules/auth-session';
-import { Friends, getOrInsertEntry } from '$lib/modules/friends';
-import { Party } from '$lib/modules/party';
+import { getCachedToken } from '$lib/modules/auth-session';
+import { cacheAccountNameAndAvatar, getOrInsertEntry } from '$lib/modules/friends';
+import { getParty } from '$lib/modules/party';
 import { accountStore } from '$lib/storage';
 import { partyCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
@@ -91,7 +92,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
         return existingInstance;
       }
 
-      const accessToken = await AuthSession.new(account).getAccessToken(true);
+      const accessToken = await getCachedToken(account, defaultClient, true);
       const instance = new XMPPManager({ ...account, accessToken }, purpose);
       XMPPManager.instances.set(account.accountId, instance);
       return instance;
@@ -331,8 +332,8 @@ export class XMPPManager extends EventEmitter<EventMap> {
     if (this.intentionalDisconnect || this.reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) return;
 
     try {
-      if (this.reconnectAttempts === 0) {
-        const newToken = await AuthSession.new(this.account).getAccessToken(true);
+      if (!this.reconnectAttempts) {
+        const newToken = await getCachedToken(this.account, defaultClient, true);
         this.account.accessToken = newToken;
       }
 
@@ -460,7 +461,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
 
     const joiningAccount = accountStore.getAccount(data.account_id);
     if (joiningAccount) {
-      const partyData = await Party.get(joiningAccount).catch(() => null);
+      const partyData = await getParty(joiningAccount).catch(() => null);
       if (!partyData) partyCache.delete(data.account_id);
     }
   }
@@ -482,7 +483,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
     const friends = getOrInsertEntry(this.account.accountId);
     if (data.status === 'PENDING') {
       if (data.from === this.account.accountId) {
-        Friends.cacheAccountNameAndAvatar(this.account, data.to);
+        cacheAccountNameAndAvatar(this.account, data.to);
         friends.outgoing.set(data.to, {
           accountId: data.to,
           mutual: 0,
@@ -490,7 +491,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
           created: data.timestamp
         });
       } else {
-        Friends.cacheAccountNameAndAvatar(this.account, data.from);
+        cacheAccountNameAndAvatar(this.account, data.from);
         friends.incoming.set(data.from, {
           accountId: data.from,
           mutual: 0,
@@ -501,7 +502,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
     } else if (data.status === 'ACCEPTED') {
       const friendId = data.from === this.account.accountId ? data.to : data.from;
 
-      Friends.cacheAccountNameAndAvatar(this.account, friendId);
+      cacheAccountNameAndAvatar(this.account, friendId);
       friends.incoming.delete(friendId);
       friends.outgoing.delete(friendId);
       friends.friends.set(friendId, {

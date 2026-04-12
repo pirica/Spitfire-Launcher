@@ -16,8 +16,12 @@
   import { launcherAppClient2 } from '$lib/constants/clients';
   import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
   import { t } from '$lib/i18n';
-  import { Authentication } from '$lib/modules/authentication';
-  import { EULA } from '$lib/modules/eula';
+  import {
+    getAccessTokenUsingDeviceAuth,
+    getAccessTokenUsingExchangeCode,
+    getExchangeCodeUsingAccessToken
+  } from '$lib/modules/authentication';
+  import { acceptEULA, checkEULA as checkGameEULA } from '$lib/modules/eula';
   import { avatarCache } from '$lib/stores';
   import { getAccountsFromSelection, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
@@ -38,13 +42,10 @@
 
         try {
           // TODO: Shortest way I could find. Might change later
-          const accessTokenData = await Authentication.getAccessTokenUsingDeviceAuth(account);
-          const exchangeData = await Authentication.getExchangeCodeUsingAccessToken(accessTokenData.access_token);
-          const launcherAccessTokenData = await Authentication.getAccessTokenUsingExchangeCode(
-            exchangeData.code,
-            launcherAppClient2
-          );
-          await Authentication.getExchangeCodeUsingAccessToken(launcherAccessTokenData.access_token);
+          const accessTokenData = await getAccessTokenUsingDeviceAuth(account);
+          const exchangeData = await getExchangeCodeUsingAccessToken(accessTokenData.access_token);
+          const launcherAccessTokenData = await getAccessTokenUsingExchangeCode(exchangeData.code, launcherAppClient2);
+          await getExchangeCodeUsingAccessToken(launcherAccessTokenData.access_token);
         } catch (error) {
           if (
             error instanceof EpicAPIError &&
@@ -58,10 +59,10 @@
           }
         }
 
-        const gameEULAData = await EULA.check(account).catch(() => null);
+        const gameEULAData = await checkGameEULA(account).catch(() => null);
         if (gameEULAData) {
           try {
-            await EULA.accept(account, gameEULAData.version);
+            await acceptEULA(account, gameEULAData.version);
           } catch (error) {
             handleError({ error, message: 'Failed to accept EULA', account, toastId: false });
           }

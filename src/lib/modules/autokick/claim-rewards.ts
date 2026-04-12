@@ -1,4 +1,4 @@
-import { MCP } from '$lib/modules/mcp';
+import { composeMCP, queryProfile } from '$lib/modules/mcp';
 import { settingsStore } from '$lib/storage';
 import { sleep } from '$lib/utils';
 import type { AccountData } from '$types/account';
@@ -10,8 +10,8 @@ export async function claimRewards(account: AccountData, skipDelay = false): Pro
     await sleep(delaySeconds * 1000);
   }
 
-  const queryProfile = await MCP.queryProfile(account, 'campaign');
-  const profile = queryProfile.profileChanges[0].profile;
+  const campaignProfile = await queryProfile(account, 'campaign');
+  const profile = campaignProfile.profileChanges[0].profile;
   const attributes = profile.stats.attributes;
 
   const hasMissionAlertRewards =
@@ -21,9 +21,9 @@ export async function claimRewards(account: AccountData, skipDelay = false): Pro
   return Promise.allSettled([
     claimQuestRewards(account, profile.items),
     openCardPacks(account, profile.items),
-    MCP.compose(account, 'RedeemSTWAccoladeTokens', 'athena', {}),
-    hasMissionAlertRewards && MCP.compose(account, 'ClaimMissionAlertRewards', 'campaign', {}),
-    hasDifficultyIncreaseRewards && MCP.compose(account, 'ClaimDifficultyIncreaseRewards', 'campaign', {})
+    composeMCP(account, 'RedeemSTWAccoladeTokens', 'athena', {}),
+    hasMissionAlertRewards && composeMCP(account, 'ClaimMissionAlertRewards', 'campaign', {}),
+    hasDifficultyIncreaseRewards && composeMCP(account, 'ClaimDifficultyIncreaseRewards', 'campaign', {})
   ]);
 }
 
@@ -38,7 +38,7 @@ async function openCardPacks(account: AccountData, queryProfileItems: CampaignPr
 
   if (!cardPackItemIds.length) return;
 
-  return MCP.compose(account, 'OpenCardPackBatch', 'campaign', { cardPackItemIds });
+  return composeMCP(account, 'OpenCardPackBatch', 'campaign', { cardPackItemIds });
 }
 
 async function claimQuestRewards(account: AccountData, queryProfileItems: CampaignProfile['items']) {
@@ -49,6 +49,6 @@ async function claimQuestRewards(account: AccountData, queryProfileItems: Campai
   if (!questIds.length) return;
 
   return Promise.allSettled(
-    questIds.map((id) => MCP.compose(account, 'ClaimQuestReward', 'campaign', { questId: id, selectedRewardIndex: 0 }))
+    questIds.map((id) => composeMCP(account, 'ClaimQuestReward', 'campaign', { questId: id, selectedRewardIndex: 0 }))
   );
 }

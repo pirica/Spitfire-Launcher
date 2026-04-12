@@ -6,7 +6,7 @@
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import WrenchIcon from '@lucide/svelte/icons/wrench';
   import { t } from '$lib/i18n';
-  import { DownloadManager } from '$lib/modules/download.svelte.js';
+  import { downloadingAppId } from '$lib/modules/download.svelte.js';
   import { downloaderStore } from '$lib/storage';
   import { runningAppIds } from '$lib/stores';
   import { Button } from '$components/ui/button';
@@ -68,7 +68,7 @@
       </DropdownMenu.Item>
 
       <DropdownMenu.Item
-        disabled={isVerifying || runningAppIds.has(app.id) || !!DownloadManager.downloadingAppId}
+        disabled={isVerifying || runningAppIds.has(app.id) || !!$downloadingAppId}
         onclick={() => (uninstallDialogAppId = app.id)}
       >
         <Trash2Icon class="size-5" />

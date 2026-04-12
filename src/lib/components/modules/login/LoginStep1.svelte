@@ -8,8 +8,13 @@
   import { defaultClient, fortniteNewSwitchGameClient } from '$lib/constants/clients';
   import { oauthService } from '$lib/http';
   import { t } from '$lib/i18n';
-  import { Authentication } from '$lib/modules/authentication';
-  import { DeviceAuth } from '$lib/modules/device-auth';
+  import {
+    getAccessTokenUsingClientCredentials,
+    getAccessTokenUsingDeviceCode,
+    getAccessTokenUsingExchangeCode,
+    getExchangeCodeUsingAccessToken
+  } from '$lib/modules/authentication';
+  import { createDeviceAuth } from '$lib/modules/device-auth';
   import { accountStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
   import type { LoginMethod } from '$components/modules/login/LoginStep0.svelte';
@@ -64,7 +69,7 @@
     isLoggingIn = true;
 
     try {
-      const accessTokenData = await Authentication.getAccessTokenUsingExchangeCode(exchangeCode);
+      const accessTokenData = await getAccessTokenUsingExchangeCode(exchangeCode);
       await handleLogin(accessTokenData);
     } catch (error) {
       handleError({ error, message: $t('accountManager.failedToLogin') });
@@ -74,7 +79,7 @@
   }
 
   async function generateDeviceCodeLink() {
-    const clientToken = await Authentication.getAccessTokenUsingClientCredentials(fortniteNewSwitchGameClient);
+    const clientToken = await getAccessTokenUsingClientCredentials(fortniteNewSwitchGameClient);
     const deviceCodeResponse = await oauthService
       .post<DeviceCodeLoginData>('deviceAuthorization', {
         body: new URLSearchParams({ prompt: 'login' }).toString(),
@@ -94,15 +99,13 @@
     isLoggingIn = true;
 
     try {
-      const newSwitchAccessTokenData = await Authentication.getAccessTokenUsingDeviceCode(
+      const newSwitchAccessTokenData = await getAccessTokenUsingDeviceCode(
         deviceCodeData!.code,
         fortniteNewSwitchGameClient
       );
 
-      const newSwitchExchangeCode = await Authentication.getExchangeCodeUsingAccessToken(
-        newSwitchAccessTokenData.access_token
-      );
-      const androidAccessTokenData = await Authentication.getAccessTokenUsingExchangeCode(newSwitchExchangeCode.code);
+      const newSwitchExchangeCode = await getExchangeCodeUsingAccessToken(newSwitchAccessTokenData.access_token);
+      const androidAccessTokenData = await getAccessTokenUsingExchangeCode(newSwitchExchangeCode.code);
 
       await handleLogin(androidAccessTokenData);
     } catch (error) {
@@ -124,7 +127,7 @@
       return;
     }
 
-    const deviceAuthData = await DeviceAuth.create({
+    const deviceAuthData = await createDeviceAuth({
       accountId: accessTokenData.account_id,
       accessToken: accessTokenData.access_token
     });

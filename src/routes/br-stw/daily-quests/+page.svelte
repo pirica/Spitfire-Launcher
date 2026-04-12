@@ -24,7 +24,7 @@
   import { dailyQuests } from '$lib/data';
   import { language, t } from '$lib/i18n';
   import { logger } from '$lib/logger';
-  import { MCP } from '$lib/modules/mcp';
+  import { clientQuestLogin, composeMCP } from '$lib/modules/mcp';
   import { getAccountsFromSelection, handleError } from '$lib/utils';
   import PageContent from '$components/layout/PageContent.svelte';
   import AccountCombobox from '$components/ui/AccountCombobox.svelte';
@@ -47,7 +47,7 @@
         };
 
         try {
-          const campaignProfile = await MCP.clientQuestLogin(account, 'campaign');
+          const campaignProfile = await clientQuestLogin(account, 'campaign');
           handleQueryProfile(campaignProfile, state);
 
           if (state.data.quests.length) {
@@ -101,7 +101,7 @@
     }
 
     try {
-      const rerollResponse = await MCP.compose<FullQueryProfile<'campaign'>>(
+      const rerollResponse = await composeMCP<FullQueryProfile<'campaign'>>(
         account,
         'FortRerollDailyQuest',
         'campaign',
