@@ -28,7 +28,7 @@
   import { XMPPManager } from '$lib/modules/xmpp';
   import { Party } from '$lib/modules/party';
   import { AutoKickBase } from '$lib/modules/autokick/base';
-  import { accountPartiesStore, friendsStore } from '$lib/stores';
+  import { partyCache, friendsCache } from '$lib/stores';
   import { transferBuildingMaterials } from '$lib/modules/autokick/transfer-building-materials';
   import { claimRewards } from '$lib/modules/autokick/claim-rewards';
   import { handleError, sleep } from '$lib/utils';
@@ -43,7 +43,7 @@
 
   const allAccounts = $derived($accountStore.accounts);
   const activeAccount = accountStore.getActiveStore();
-  const currentAccountParty = $derived(accountPartiesStore.get($activeAccount.accountId));
+  const currentAccountParty = $derived(partyCache.get($activeAccount.accountId));
   const isDoingSomething = $derived(isKicking || isLeaving || isClaiming);
 
   const partyMembers = $derived<PartyMember[] | undefined>(
@@ -89,7 +89,7 @@
   );
 
   async function fetchPartyData(account: AccountData) {
-    const cache = accountPartiesStore.get(account.accountId);
+    const cache = partyCache.get(account.accountId);
     if (cache) return cache;
 
     const response = await Party.get(account);
@@ -194,7 +194,7 @@
         for (const member of party.members) {
           if (registeredIds.includes(member.account_id)) {
             accountParties.set(member.account_id, party.id);
-            accountPartiesStore.set(member.account_id, party);
+            partyCache.set(member.account_id, party);
           }
         }
       }
@@ -207,7 +207,7 @@
             const account = allAccounts.find((a) => a.accountId === id)!;
 
             if (!claimOnly) {
-              const oldParty = accountPartiesStore.get(account.accountId);
+              const oldParty = partyCache.get(account.accountId);
               const oldMembers = oldParty?.members.filter((x) => x.account_id !== account.accountId) || [];
               await Party.leave(account, partyId);
 
@@ -363,7 +363,7 @@
       xmpp.connect();
     });
 
-    if (!friendsStore.has($activeAccount.accountId)) {
+    if (!friendsCache.has($activeAccount.accountId)) {
       Friends.getSummary($activeAccount);
     }
   });
@@ -456,7 +456,7 @@
       {@const canLeave = isRegisteredAccount && !member.isLeader}
       {@const canKick = partyLeaderAccount ? partyLeaderAccount.accountId !== member.accountId : false}
       {@const canBePromoted = partyLeaderAccount ? !member.isLeader : false}
-      {@const accountFriends = friendsStore.get($activeAccount.accountId)}
+      {@const accountFriends = friendsCache.get($activeAccount.accountId)}
       {@const canAddFriend =
         !accountFriends?.friends?.has(member.accountId) && !accountFriends?.outgoing?.has(member.accountId)}
 

@@ -5,7 +5,7 @@ import { getChildLogger } from '$lib/logger';
 import { Friends } from '$lib/modules/friends';
 import { Party } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
-import { accountPartiesStore } from '$lib/stores';
+import { partyCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
 import type {
   EpicEventFriendRequest,
@@ -109,10 +109,10 @@ export class TaxiManager {
 
     TaxiManager.taxiAccountIds.delete(this.account.accountId);
 
-    const currentParty = accountPartiesStore.get(this.account.accountId);
+    const currentParty = partyCache.get(this.account.accountId);
     if (currentParty) {
       void (await Party.leave(this.account, currentParty.id));
-      accountPartiesStore.delete(this.account.accountId);
+      partyCache.delete(this.account.accountId);
     }
   }
 
@@ -155,10 +155,10 @@ export class TaxiManager {
   private async handleInvite(invite: EpicEventPartyPing) {
     logger.debug('Accepting party invite', { accountId: this.account.accountId, inviterId: invite.pinger_id });
 
-    const currentParty = accountPartiesStore.get(this.account.accountId);
+    const currentParty = partyCache.get(this.account.accountId);
     if (currentParty?.members.length === 1) {
       await Party.leave(this.account, currentParty.id);
-      accountPartiesStore.delete(this.account.accountId);
+      partyCache.delete(this.account.accountId);
     }
 
     const [inviterPartyData] = await Party.getInviterParty(this.account, invite.pinger_id);
@@ -198,7 +198,7 @@ export class TaxiManager {
       }
     }
 
-    const currentParty = accountPartiesStore.get(this.account.accountId);
+    const currentParty = partyCache.get(this.account.accountId);
     const isInParty = (currentParty?.members.length || 0) > 1;
     this.setIsAvailable(!isInParty);
   }

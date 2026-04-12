@@ -9,7 +9,7 @@
   import { ItemColors } from '$lib/constants/item-colors';
   import { language, t } from '$lib/i18n';
   import { accountStore } from '$lib/storage';
-  import { accountCacheStore, brShopStore, createDiscountedStore, createIsOwnedStore } from '$lib/stores';
+  import { accountDataCache, brShopCache, createDiscountedStore, createIsOwnedStore } from '$lib/stores';
   import CheckIcon from '@lucide/svelte/icons/check';
   import GiftIcon from '@lucide/svelte/icons/gift';
   import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
@@ -21,19 +21,18 @@
   let { offerId = $bindable() }: Props = $props();
 
   const activeAccount = accountStore.getActiveStore(true);
-  const item = $brShopStore.offers.find((x) => x.offerId === offerId)!;
-  let isOpen = $state(true);
-
+  const item = $derived($brShopCache.offers.find((x) => x.offerId === offerId)!);
   const {
     vbucks: ownedVbucks = 0,
     friends = [],
     remainingGifts = 5
-  } = $derived($accountCacheStore[$activeAccount?.accountId || ''] || {});
+  } = $derived(accountDataCache.get($activeAccount?.accountId || '') || {});
 
   const colors: Record<string, string> = { ...ItemColors.rarities, ...ItemColors.series };
   const isItemOwned = $derived(createIsOwnedStore($activeAccount?.accountId, item));
   const discountedPrice = $derived(createDiscountedStore($activeAccount?.accountId, item));
 
+  let isOpen = $state(true);
   let isPurchasing = $state(false);
   let isPurchaseDialogOpen = $state(false);
   let isGiftDialogOpen = $state(false);

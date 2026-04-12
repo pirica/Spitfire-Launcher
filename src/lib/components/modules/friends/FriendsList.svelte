@@ -12,7 +12,7 @@
 
 <script lang="ts">
   import BanIcon from '@lucide/svelte/icons/ban';
-  import { avatarCache, displayNamesCache, friendsStore } from '$lib/stores';
+  import { avatarCache, displayNameCache, friendsCache } from '$lib/stores';
   import { t } from '$lib/i18n';
   import type {
     BlockedAccountData,
@@ -31,12 +31,12 @@
   const { listType, searchQuery = $bindable() }: Props = $props();
 
   const list = $derived<Friend[]>(
-    friendsStore
+    friendsCache
       .get($accountStore.activeAccountId!)
       ?.[listType]?.values()
       ?.map((data: FriendData | IncomingFriendRequestData | OutgoingFriendRequestData | BlockedAccountData) => ({
         accountId: data.accountId,
-        displayName: displayNamesCache.get(data.accountId) || data.accountId,
+        displayName: displayNameCache.get(data.accountId) || data.accountId,
         nickname: 'alias' in data ? data.alias : undefined,
         avatarUrl: avatarCache.get(data.accountId) || '/misc/default-outfit-icon.png',
         createdAt: new Date(data.created)

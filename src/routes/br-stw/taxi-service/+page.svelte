@@ -9,7 +9,7 @@
   import PageContent from '$components/layout/PageContent.svelte';
   import { Alert } from '$components/ui/alert';
   import { Label } from '$components/ui/label';
-  import { accountPartiesStore } from '$lib/stores';
+  import { partyCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
   import { t } from '$lib/i18n';
   import { Button } from '$components/ui/button';
@@ -73,7 +73,7 @@
 
     if (taxiManager.level === oldLevel) return;
 
-    const party = accountPartiesStore.get($activeAccount.accountId);
+    const party = partyCache.get($activeAccount.accountId);
     if (!party) return;
 
     taxiManager.setPowerLevel(party.id, party.revision);

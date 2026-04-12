@@ -1,7 +1,7 @@
 import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { AuthSession } from '$lib/modules/auth-session';
 import { publicAccountService, userSearchService } from '$lib/http';
-import { displayNamesCache } from '$lib/stores';
+import { displayNameCache } from '$lib/stores';
 import { processChunks } from '$lib/utils';
 import type { AccountData } from '$types/account';
 import type { EpicAccountById, EpicAccountByName, EpicAccountSearch } from '$types/game/lookup';
@@ -9,7 +9,7 @@ import type { EpicAccountById, EpicAccountByName, EpicAccountSearch } from '$typ
 export class Lookup {
   static async fetchById(account: AccountData, accountId: string) {
     const data = await AuthSession.ky(account, publicAccountService).get<EpicAccountById>(accountId).json();
-    displayNamesCache.set(data.id, data.displayName);
+    displayNameCache.set(data.id, data.displayName);
     return data;
   }
 
@@ -25,7 +25,7 @@ export class Lookup {
       const name = account.displayName || Object.values(account.externalAuths).map((x) => x.externalDisplayName)?.[0];
       if (!name) continue;
 
-      displayNamesCache.set(account.id, name);
+      displayNameCache.set(account.id, name);
     }
 
     return accounts;
@@ -36,7 +36,7 @@ export class Lookup {
       .get<EpicAccountByName>(`displayName/${displayName.trim()}`)
       .json();
 
-    displayNamesCache.set(data.id, data.displayName);
+    displayNameCache.set(data.id, data.displayName);
     return data;
   }
 
@@ -49,7 +49,7 @@ export class Lookup {
       const name = account.matches[0]?.value;
       if (!name) continue;
 
-      displayNamesCache.set(account.accountId, name);
+      displayNameCache.set(account.accountId, name);
     }
 
     return data;

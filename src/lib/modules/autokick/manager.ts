@@ -8,7 +8,7 @@ import { MCP } from '$lib/modules/mcp';
 import { Party } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { accountStore, settingsStore } from '$lib/storage';
-import { accountPartiesStore } from '$lib/stores';
+import { partyCache } from '$lib/stores';
 import { sleep } from '$lib/utils';
 import type { AccountData } from '$types/account';
 import type { PartyData } from '$types/game/party';
@@ -183,7 +183,7 @@ export class AutoKickManager {
   }
 
   private async checkState(): Promise<State> {
-    const party = accountPartiesStore.get(this.account.accountId) || (await Party.get(this.account)).current[0];
+    const party = partyCache.get(this.account.accountId) || (await Party.get(this.account)).current[0];
     const partyState = party?.meta['Default:PartyState_s'];
     if (!party || partyState !== 'PostMatchmaking') {
       return 'lobby';

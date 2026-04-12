@@ -20,7 +20,7 @@
 <script lang="ts">
   import * as DropdownMenu from '$components/ui/dropdown-menu';
   import { ExternalLink } from '$components/ui/external-link';
-  import { accountPartiesStore } from '$lib/stores';
+  import { partyCache } from '$lib/stores';
   import { t } from '$lib/i18n';
   import CrownIcon from '@lucide/svelte/icons/crown';
   import EllipsisIcon from '@lucide/svelte/icons/ellipsis';
@@ -34,7 +34,7 @@
   import { accountStore } from '$lib/storage';
 
   const activeAccount = accountStore.getActiveStore();
-  const currentAccountParty = $derived(accountPartiesStore.get($activeAccount.accountId));
+  const currentAccountParty = $derived(partyCache.get($activeAccount.accountId));
 
   type Props = {
     member: PartyMember;

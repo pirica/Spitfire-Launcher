@@ -1,13 +1,3 @@
-export type EpicAPIErrorData = {
-  errorCode: string;
-  errorMessage: string;
-  messageVars: any[];
-  numericErrorCode: number;
-  continuation?: string;
-  continuationUrl?: string;
-  correctiveAction?: string;
-};
-
 export type EpicTokenType = 'eg1' | 'bearer';
 
 export type EpicOAuthData = {

@@ -5,7 +5,7 @@ import { getChildLogger } from '$lib/logger';
 import { AuthSession } from '$lib/modules/auth-session';
 import { Authentication } from '$lib/modules/authentication';
 import { dataDirectory } from '$lib/storage/file-store';
-import { ownedApps } from '$lib/stores';
+import { ownedAppsCache } from '$lib/stores';
 import { Tauri } from '$lib/tauri';
 import type { AccountData } from '$types/account';
 import type { EpicOAuthData } from '$types/game/authorizations';
@@ -78,7 +78,7 @@ export class Legendary {
   static async logout() {
     const data = await Legendary.execute<string>(['auth', '--delete']);
     Legendary.accountId = undefined;
-    ownedApps.set([]);
+    ownedAppsCache.set([]);
     return data;
   }
 
@@ -144,10 +144,10 @@ export class Legendary {
   static async verify(appId: string) {
     const { stderr } = await Legendary.execute<string>(['verify', appId, '-y', '--skip-sdl']);
     const requiresRepair = stderr.includes('repair your game installation');
-    const requiredRepair = get(ownedApps).find((app) => app.id === appId)?.requiresRepair || false;
+    const requiredRepair = get(ownedAppsCache).find((app) => app.id === appId)?.requiresRepair || false;
 
     if (requiresRepair !== requiredRepair) {
-      ownedApps.update((current) => {
+      ownedAppsCache.update((current) => {
         return current.map((app) => (app.id === appId ? { ...app, requiresRepair } : app));
       });
     }
@@ -158,7 +158,7 @@ export class Legendary {
   static async uninstall(appId: string) {
     const data = await Legendary.execute(['uninstall', appId, '-y']);
 
-    ownedApps.update((current) => {
+    ownedAppsCache.update((current) => {
       return current.map((app) => (app.id === appId ? { ...app, installed: false } : app));
     });
 
@@ -170,7 +170,7 @@ export class Legendary {
     await Legendary.syncEGL();
     const installedList = await Legendary.getInstalledList();
 
-    ownedApps.set(
+    ownedAppsCache.set(
       list.stdout
         .filter((app) => app.metadata.entitlementType === 'EXECUTABLE')
         .map((app) => {

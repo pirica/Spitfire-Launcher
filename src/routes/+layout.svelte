@@ -16,7 +16,7 @@
   import { WorldInfo } from '$lib/modules/world-info';
   import { setLocale } from '$lib/paraglide/runtime';
   import { accountStore, downloaderStore, settingsStore } from '$lib/storage';
-  import { ownedApps, runningAppIds } from '$lib/stores';
+  import { ownedAppsCache, runningAppIds } from '$lib/stores';
   import { Tauri } from '$lib/tauri';
   import { handleError } from '$lib/utils';
   import type { GitHubRelease } from '$types/github';
@@ -79,7 +79,7 @@
 
     await Legendary.cacheApps();
 
-    const updatableApps = $ownedApps.filter((app) => app.hasUpdate);
+    const updatableApps = $ownedAppsCache.filter((app) => app.hasUpdate);
     const appAutoUpdate = $downloaderStore.perAppAutoUpdate || {};
 
     let sentFirstNotification = false;
@@ -96,7 +96,7 @@
   }
 
   async function getAppName(appId: string) {
-    const cached = $ownedApps.find((app) => app.id === appId);
+    const cached = $ownedAppsCache.find((app) => app.id === appId);
     if (cached) return cached.title;
 
     const appInfo = await Legendary.getAppInfo(appId);

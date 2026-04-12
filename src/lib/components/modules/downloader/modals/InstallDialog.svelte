@@ -7,7 +7,7 @@
 
 <script lang="ts">
   import * as Dialog from '$components/ui/dialog';
-  import { ownedApps } from '$lib/stores';
+  import { ownedAppsCache } from '$lib/stores';
   import { Legendary } from '$lib/modules/legendary';
   import { DownloadManager } from '$lib/modules/download.svelte.js';
   import { bytesToSize, cn } from '$lib/utils';
@@ -33,7 +33,7 @@
 
   let { id = $bindable() }: Props = $props();
 
-  const app = $derived($ownedApps.find((x) => x.id === id)!);
+  const app = $derived($ownedAppsCache.find((x) => x.id === id)!);
 
   let isOpen = $state(true);
   let isStartingDownload = $state(false);
@@ -89,7 +89,7 @@
     installSize = appInfo.manifest.disk_size;
 
     app.downloadSize = downloadSize;
-    ownedApps.update((current) => current.map((app) => (app.id === id ? { ...app, downloadSize } : app)));
+    ownedAppsCache.update((current) => current.map((app) => (app.id === id ? { ...app, downloadSize } : app)));
   });
 </script>
 

@@ -1,4 +1,12 @@
-import type { EpicAPIErrorData } from '$types/game/authorizations';
+export type EpicAPIErrorData = {
+  errorCode: string;
+  errorMessage: string;
+  messageVars: any[];
+  numericErrorCode: number;
+  continuation?: string;
+  continuationUrl?: string;
+  correctiveAction?: string;
+};
 
 export class EpicAPIError extends Error implements EpicAPIErrorData {
   public errorCode: string;

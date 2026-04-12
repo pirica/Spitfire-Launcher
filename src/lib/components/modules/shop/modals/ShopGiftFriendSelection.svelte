@@ -6,8 +6,7 @@
   import { language, t } from '$lib/i18n';
   import { MCP } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
-  import { accountCacheStore } from '$lib/stores';
-  import type { AccountCacheData } from '$types/account';
+  import { accountDataCache } from '$lib/stores';
   import type { SpitfireShopItem } from '$types/game/shop';
   import GiftIcon from '@lucide/svelte/icons/gift';
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
@@ -22,9 +21,11 @@
   let { item, isSendingGifts, open = $bindable(false) }: Props = $props();
 
   const activeAccount = accountStore.getActiveStore();
-  const { vbucks: ownedVbucks = 0, friends = [] } = $derived<AccountCacheData>(
-    $accountCacheStore[$activeAccount.accountId] || {}
-  );
+  const {
+    vbucks: ownedVbucks = 0,
+    friends = [],
+    remainingGifts = 5
+  } = $derived(accountDataCache.get($activeAccount.accountId) || {});
 
   let selectedFriends = $state<string[]>([]);
 
@@ -33,12 +34,10 @@
 
     try {
       const giftData = await MCP.giftCatalogEntry($activeAccount, item.offerId, selectedFriends, item.price.final);
-      accountCacheStore.update((accounts) => {
-        const account = accounts[$activeAccount.accountId];
-        account.remainingGifts = (account.remainingGifts || 0) - selectedFriends.length;
-        account.vbucks = (account.vbucks || 0) - giftData.vbucksSpent;
-
-        return accounts;
+      accountDataCache.set($activeAccount.accountId, {
+        remainingGifts: remainingGifts - selectedFriends.length,
+        vbucks: ownedVbucks - giftData.vbucksSpent,
+        friends
       });
 
       toast.success($t('itemShop.sentGift'));
@@ -47,10 +46,10 @@
         switch (error.errorCode) {
           case 'errors.com.epicgames.modules.gamesubcatalog.gift_limit_reached': {
             toast.error($t('itemShop.reachedDailyGiftLimit'));
-            accountCacheStore.update((accounts) => {
-              const account = accounts[$activeAccount.accountId];
-              account.remainingGifts = 0;
-              return accounts;
+            accountDataCache.set($activeAccount.accountId, {
+              vbucks: ownedVbucks,
+              friends,
+              remainingGifts: 0
             });
 
             return;
@@ -63,10 +62,11 @@
                 amount: Number.parseInt(errorItemPrice) - Number.parseInt(errorOwnedVbucks)
               })
             );
-            accountCacheStore.update((accounts) => {
-              const account = accounts[$activeAccount.accountId];
-              account.vbucks = Number.parseInt(errorItemPrice);
-              return accounts;
+
+            accountDataCache.set($activeAccount.accountId, {
+              vbucks: ownedVbucks,
+              friends,
+              remainingGifts
             });
 
             return;

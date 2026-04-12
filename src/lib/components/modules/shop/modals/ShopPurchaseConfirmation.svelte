@@ -5,7 +5,7 @@
   import { language, t } from '$lib/i18n';
   import { MCP } from '$lib/modules/mcp';
   import { accountStore } from '$lib/storage';
-  import { accountCacheStore, createDiscountedStore, ownedItemsStore } from '$lib/stores';
+  import { accountDataCache, createDiscountedStore, ownedItemsCache } from '$lib/stores';
   import type { SpitfireShopItem } from '$types/game/shop';
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import { toast } from 'svelte-sonner';
@@ -19,7 +19,8 @@
   let { item, isPurchasing, open = $bindable(false) }: Props = $props();
 
   const activeAccount = accountStore.getActiveStore();
-  const discountedPrice = $derived(createDiscountedStore($activeAccount?.accountId, item));
+  const discountedPrice = $derived(createDiscountedStore($activeAccount.accountId, item));
+  const dataCache = $derived(accountDataCache.get($activeAccount.accountId) || {});
 
   async function purchaseItem() {
     isPurchasing = true;
@@ -27,13 +28,12 @@
     try {
       const purchaseData = await MCP.purchaseCatalogEntry($activeAccount, item.offerId, $discountedPrice);
 
-      accountCacheStore.update((accounts) => {
-        const account = accounts[$activeAccount.accountId];
-        account.vbucks = (account.vbucks || 0) - purchaseData.vbucksSpent;
-        return accounts;
+      accountDataCache.set($activeAccount.accountId, {
+        ...dataCache,
+        vbucks: (dataCache.vbucks || 0) - purchaseData.vbucksSpent
       });
 
-      ownedItemsStore.update((accounts) => {
+      ownedItemsCache.update((accounts) => {
         // eslint-disable-next-line svelte/prefer-svelte-reactivity
         const items = accounts[$activeAccount.accountId] || new Set<string>();
         items.add(item.offerId);
@@ -54,17 +54,16 @@
                 amount: Number.parseInt(errorItemPrice) - Number.parseInt(errorOwnedVbucks)
               })
             );
-            accountCacheStore.update((accounts) => {
-              const account = accounts[$activeAccount.accountId];
-              account.vbucks = Number.parseInt(errorItemPrice);
-              return accounts;
+            accountDataCache.set($activeAccount.accountId, {
+              ...dataCache,
+              vbucks: Number.parseInt(errorItemPrice)
             });
 
             return;
           }
           case 'errors.com.epicgames.modules.gamesubcatalog.purchase_not_allowed': {
             toast.error($t('itemShop.alreadyOwned'));
-            ownedItemsStore.update((accounts) => {
+            ownedItemsCache.update((accounts) => {
               // eslint-disable-next-line svelte/prefer-svelte-reactivity
               const items = accounts[$activeAccount.accountId] || new Set<string>();
               items.add(item.offerId);

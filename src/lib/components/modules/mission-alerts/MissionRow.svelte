@@ -2,7 +2,7 @@
   import { TheaterNames, TheaterColors, ZoneNames, TheaterLetters } from '$lib/constants/stw/world-info';
   import { language } from '$lib/i18n';
   import { accountStore } from '$lib/storage';
-  import { claimedMissionAlerts } from '$lib/stores';
+  import { claimedAlerts } from '$lib/stores';
   import type { WorldParsedMission } from '$types/game/stw/world-info';
 
   const activeAccount = accountStore.getActiveStore(true);
@@ -40,7 +40,7 @@
     <span
       class="truncate text-xs font-medium text-foreground xl:w-36"
       class:text-green-500={$activeAccount &&
-        claimedMissionAlerts.get($activeAccount.accountId)?.has(mission.alert?.guid || '')}
+        claimedAlerts.get($activeAccount.accountId)?.has(mission.alert?.guid || '')}
     >
       {zoneName}
     </span>

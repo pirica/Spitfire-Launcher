@@ -14,7 +14,7 @@
   import { XMPPManager } from '$lib/modules/xmpp';
   import LoaderCircleIcon from '@lucide/svelte/icons/loader-circle';
   import UserPlusIcon from '@lucide/svelte/icons/user-plus';
-  import { friendsStore } from '$lib/stores';
+  import { friendsCache } from '$lib/stores';
   import InputWithAutocomplete from '$components/ui/InputWithAutocomplete.svelte';
   import { handleError } from '$lib/utils';
   import { t } from '$lib/i18n';
@@ -42,7 +42,7 @@
   let searchQuery = $state<string>();
 
   function getTab(listType: ListType): Tab {
-    const list = friendsStore.get($activeAccount.accountId)?.[listType];
+    const list = friendsCache.get($activeAccount.accountId)?.[listType];
 
     return {
       id: listType,
@@ -81,7 +81,7 @@
 
   $effect(() => {
     untrack(() => {
-      if (!friendsStore.get($activeAccount.accountId)?.[activeTab]?.size) {
+      if (!friendsCache.get($activeAccount.accountId)?.[activeTab]?.size) {
         isLoading = true;
       }
     });

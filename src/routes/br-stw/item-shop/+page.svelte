@@ -16,10 +16,9 @@
   import { Lookup } from '$lib/modules/lookup';
   import { MCP } from '$lib/modules/mcp';
   import { SpitfireAPI } from '$lib/modules/spitfire';
-  import { accountCacheStore, brShopStore, ownedItemsStore } from '$lib/stores';
+  import { accountDataCache, brShopCache, ownedItemsCache, type AccountDataCache } from '$lib/stores';
   import { calculateVbucks, formatRemainingDuration, handleError } from '$lib/utils';
   import { t } from '$lib/i18n';
-  import type { AccountCacheData } from '$types/account';
   import type { SpitfireShopSection } from '$types/game/shop';
   import Fuse from 'fuse.js';
   import { onMount } from 'svelte';
@@ -29,7 +28,7 @@
   const activeAccount = accountStore.getActiveStore(true);
 
   $effect(() => {
-    const alreadyFetched = $activeAccount && Object.keys($accountCacheStore[$activeAccount.accountId] || {}).length;
+    const alreadyFetched = $activeAccount && Object.keys(accountDataCache.get($activeAccount.accountId) || {}).length;
     if (!$activeAccount || alreadyFetched) return;
 
     fetchAccountData();
@@ -79,12 +78,12 @@
     shopSections = null;
 
     try {
-      if (!$brShopStore || forceRefresh) {
+      if (!$brShopCache || forceRefresh) {
         const response = await SpitfireAPI.fetchShop();
-        brShopStore.set(response);
+        brShopCache.set(response);
       }
 
-      shopSections = groupBySections($brShopStore.offers).map((section) => ({
+      shopSections = groupBySections($brShopCache.offers).map((section) => ({
         ...section,
         items: section.items.sort((a, b) => b.sortPriority - a.sortPriority)
       }));
@@ -121,7 +120,7 @@
       Friends.getFriends(account)
     ]);
 
-    let accountData: AccountCacheData = {
+    let accountData: AccountDataCache = {
       vbucks: 0,
       remainingGifts: 0,
       friends: []
@@ -133,7 +132,7 @@
         .filter((item) => item.attributes.item_seen != null)
         .map((item) => item.templateId.split(':')[1].toLowerCase());
 
-      ownedItemsStore.update((accounts) => {
+      ownedItemsCache.update((accounts) => {
         accounts[account.accountId] = new Set<string>(ownedItems);
         return accounts;
       });
@@ -171,10 +170,7 @@
     }
 
     if (commonCore.status === 'fulfilled' || friends.status === 'fulfilled') {
-      accountCacheStore.update((accounts) => {
-        accounts[account.accountId] = accountData;
-        return accounts;
-      });
+      accountDataCache.set(account.accountId, accountData);
     }
   }
 

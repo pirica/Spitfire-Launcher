@@ -6,7 +6,7 @@
   import * as Tabs from '$components/ui/tabs';
   import { MCP } from '$lib/modules/mcp';
   import type { WorldParsedMission } from '$types/game/stw/world-info';
-  import { claimedMissionAlerts, worldInfoCache } from '$lib/stores';
+  import { claimedAlerts, worldInfoCache } from '$lib/stores';
   import { TheaterNames, TheaterPowerLevels, Theaters, ZoneCategories } from '$lib/constants/stw/world-info';
   import { t } from '$lib/i18n';
   import { WorldInfo } from '$lib/modules/world-info';
@@ -203,14 +203,14 @@
   }
 
   $effect(() => {
-    if (!$activeAccount || claimedMissionAlerts.has($activeAccount.accountId)) return;
+    if (!$activeAccount || claimedAlerts.has($activeAccount.accountId)) return;
 
     MCP.queryProfile($activeAccount, 'campaign').then((queryProfile) => {
       const attributes = queryProfile.profileChanges[0].profile.stats.attributes;
       const doneMissionAlerts =
         attributes.mission_alert_redemption_record?.claimData?.map((claimData) => claimData.missionAlertId) || [];
 
-      claimedMissionAlerts.set($activeAccount.accountId, new SvelteSet(doneMissionAlerts));
+      claimedAlerts.set($activeAccount.accountId, new SvelteSet(doneMissionAlerts));
     });
   });
 

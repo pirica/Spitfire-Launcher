@@ -4,7 +4,7 @@ import { AuthSession } from '$lib/modules/auth-session';
 import { Avatar } from '$lib/modules/avatar';
 import { Lookup } from '$lib/modules/lookup';
 import { friendService } from '$lib/http';
-import { avatarCache, displayNamesCache, type FriendsEntry, friendsStore } from '$lib/stores';
+import { avatarCache, displayNameCache, friendsCache, type AccountFriends } from '$lib/stores';
 import { processChunks } from '$lib/utils';
 import type { AccountData } from '$types/account';
 import type {
@@ -25,13 +25,13 @@ export class Friends {
         .get<FriendData>(`${account.accountId}/friends/${friendId}`)
         .json();
 
-      FriendsStore.set(account.accountId, 'friends', friendId, friendData);
+      setCollectionItem(account.accountId, 'friends', friendId, friendData);
       Friends.cacheAccountNameAndAvatar(account, friendId);
 
       return friendData;
     } catch (error) {
       if (error instanceof EpicAPIError && error.errorCode === 'errors.com.epicgames.friends.friendship_not_found') {
-        FriendsStore.delete(account.accountId, 'friends', friendId);
+        deleteCollectionItem(account.accountId, 'friends', friendId);
       }
 
       throw error;
@@ -41,10 +41,10 @@ export class Friends {
   static async addFriend(account: AccountData, friendId: string) {
     try {
       const data = await AuthSession.ky(account, friendService).post(`${account.accountId}/friends/${friendId}`).json();
-      const incomingRequest = friendsStore.get(account.accountId)?.incoming.get(friendId);
+      const incomingRequest = friendsCache.get(account.accountId)?.incoming.get(friendId);
       if (incomingRequest) {
-        FriendsStore.delete(account.accountId, 'incoming', friendId);
-        FriendsStore.set(account.accountId, 'friends', friendId, {
+        deleteCollectionItem(account.accountId, 'incoming', friendId);
+        setCollectionItem(account.accountId, 'friends', friendId, {
           accountId: friendId,
           alias: '',
           note: '',
@@ -53,7 +53,7 @@ export class Friends {
           mutual: 0
         });
       } else {
-        FriendsStore.set(account.accountId, 'outgoing', friendId, {
+        setCollectionItem(account.accountId, 'outgoing', friendId, {
           accountId: friendId,
           mutual: 0,
           favorite: false,
@@ -66,9 +66,9 @@ export class Friends {
     } catch (error) {
       if (error instanceof EpicAPIError) {
         if (error.errorCode === 'errors.com.epicgames.friends.duplicate_friendship') {
-          const friend = friendsStore.get(account.accountId)?.friends.get(friendId);
+          const friend = friendsCache.get(account.accountId)?.friends.get(friendId);
           if (!friend) {
-            FriendsStore.set(account.accountId, 'friends', friendId, {
+            setCollectionItem(account.accountId, 'friends', friendId, {
               accountId: friendId,
               alias: '',
               note: '',
@@ -80,9 +80,9 @@ export class Friends {
         }
 
         if (error.errorCode === 'errors.com.epicgames.friends.friend_request_already_sent') {
-          const outgoing = friendsStore.get(account.accountId)?.outgoing.get(friendId);
+          const outgoing = friendsCache.get(account.accountId)?.outgoing.get(friendId);
           if (!outgoing) {
-            FriendsStore.set(account.accountId, 'outgoing', friendId, {
+            setCollectionItem(account.accountId, 'outgoing', friendId, {
               accountId: friendId,
               mutual: 0,
               favorite: false,
@@ -100,17 +100,17 @@ export class Friends {
     try {
       const data = await AuthSession.ky(account, friendService).delete(`${account.accountId}/friends/${friendId}`);
 
-      FriendsStore.delete(account.accountId, 'friends', friendId);
-      FriendsStore.delete(account.accountId, 'incoming', friendId);
-      FriendsStore.delete(account.accountId, 'outgoing', friendId);
+      deleteCollectionItem(account.accountId, 'friends', friendId);
+      deleteCollectionItem(account.accountId, 'incoming', friendId);
+      deleteCollectionItem(account.accountId, 'outgoing', friendId);
 
       Friends.cacheAccountNameAndAvatar(account, friendId);
       return data;
     } catch (error) {
       if (error instanceof EpicAPIError && error.errorCode === 'errors.com.epicgames.friends.friendship_not_found') {
-        FriendsStore.delete(account.accountId, 'friends', friendId);
-        FriendsStore.delete(account.accountId, 'incoming', friendId);
-        FriendsStore.delete(account.accountId, 'outgoing', friendId);
+        deleteCollectionItem(account.accountId, 'friends', friendId);
+        deleteCollectionItem(account.accountId, 'incoming', friendId);
+        deleteCollectionItem(account.accountId, 'outgoing', friendId);
       }
 
       throw error;
@@ -119,7 +119,7 @@ export class Friends {
 
   static async removeAll(account: AccountData) {
     const data = await AuthSession.ky(account, friendService).delete(`${account.accountId}/friends`);
-    FriendsStore.getOrCreate(account.accountId).friends.clear();
+    getOrInsertEntry(account.accountId).friends.clear();
     return data;
   }
 
@@ -137,7 +137,7 @@ export class Friends {
 
     await Promise.allSettled([Lookup.fetchByIds(account, allAccountIds), Avatar.fetchAvatars(account, allAccountIds)]);
 
-    friendsStore.set(account.accountId, {
+    friendsCache.set(account.accountId, {
       friends: new SvelteMap(data.friends.map((x) => [x.accountId, x])),
       incoming: new SvelteMap(data.incoming.map((x) => [x.accountId, x])),
       outgoing: new SvelteMap(data.outgoing.map((x) => [x.accountId, x])),
@@ -149,7 +149,7 @@ export class Friends {
 
   static async getFriends(account: AccountData) {
     const data = await AuthSession.ky(account, friendService).get<FriendData[]>(`${account.accountId}/friends`).json();
-    FriendsStore.replace(account.accountId, 'friends', data);
+    replaceCollection(account.accountId, 'friends', data);
     return data;
   }
 
@@ -158,7 +158,7 @@ export class Friends {
       .get<IncomingFriendRequestData[]>(`${account.accountId}/incoming`)
       .json();
 
-    FriendsStore.replace(account.accountId, 'incoming', data);
+    replaceCollection(account.accountId, 'incoming', data);
     return data;
   }
 
@@ -167,7 +167,7 @@ export class Friends {
       .get<OutgoingFriendRequestData[]>(`${account.accountId}/outgoing`)
       .json();
 
-    FriendsStore.replace(account.accountId, 'outgoing', data);
+    replaceCollection(account.accountId, 'outgoing', data);
     return data;
   }
 
@@ -175,17 +175,17 @@ export class Friends {
     const data = await AuthSession.ky(account, friendService)
       .get<BlockedAccountData[]>(`${account.accountId}/blocklist`)
       .json();
-    FriendsStore.replace(account.accountId, 'blocklist', data);
+    replaceCollection(account.accountId, 'blocklist', data);
     return data;
   }
 
   static async block(account: AccountData, friendId: string) {
     const data = await AuthSession.ky(account, friendService).post(`${account.accountId}/blocklist/${friendId}`).json();
 
-    FriendsStore.delete(account.accountId, 'incoming', friendId);
-    FriendsStore.delete(account.accountId, 'outgoing', friendId);
-    FriendsStore.delete(account.accountId, 'friends', friendId);
-    FriendsStore.set(account.accountId, 'blocklist', friendId, {
+    deleteCollectionItem(account.accountId, 'incoming', friendId);
+    deleteCollectionItem(account.accountId, 'outgoing', friendId);
+    deleteCollectionItem(account.accountId, 'friends', friendId);
+    setCollectionItem(account.accountId, 'blocklist', friendId, {
       accountId: friendId,
       created: new Date().toISOString()
     });
@@ -196,7 +196,7 @@ export class Friends {
 
   static async unblock(account: AccountData, friendId: string) {
     const data = await AuthSession.ky(account, friendService).delete(`${account.accountId}/blocklist/${friendId}`);
-    FriendsStore.delete(account.accountId, 'blocklist', friendId);
+    deleteCollectionItem(account.accountId, 'blocklist', friendId);
     Friends.cacheAccountNameAndAvatar(account, friendId);
     return data;
   }
@@ -208,7 +208,7 @@ export class Friends {
       body: nickname
     });
 
-    const friend = friendsStore.get(account.accountId)?.friends.get(friendId) ?? {
+    const friend = friendsCache.get(account.accountId)?.friends.get(friendId) ?? {
       accountId: friendId,
       alias: '',
       note: '',
@@ -217,7 +217,7 @@ export class Friends {
       mutual: 0
     };
 
-    FriendsStore.set(account.accountId, 'friends', friendId, {
+    setCollectionItem(account.accountId, 'friends', friendId, {
       ...friend,
       alias: nickname
     });
@@ -235,8 +235,8 @@ export class Friends {
     );
 
     for (const friendId of acceptedRequests) {
-      FriendsStore.delete(account.accountId, 'incoming', friendId);
-      FriendsStore.set(account.accountId, 'friends', friendId, {
+      deleteCollectionItem(account.accountId, 'incoming', friendId);
+      setCollectionItem(account.accountId, 'friends', friendId, {
         accountId: friendId,
         alias: '',
         note: '',
@@ -250,7 +250,7 @@ export class Friends {
   }
 
   static cacheAccountNameAndAvatar(account: AccountData, accountId: string) {
-    if (!displayNamesCache.get(accountId)) {
+    if (!displayNameCache.get(accountId)) {
       Lookup.fetchById(account, accountId).catch((error) => {
         logger.error('Failed to fetch account display name for caching', { accountId, error });
       });
@@ -264,53 +264,53 @@ export class Friends {
   }
 }
 
-type FriendsCollectionKey = keyof FriendsEntry;
+type FriendsCollectionKey = keyof AccountFriends;
 
-export class FriendsStore {
-  static getOrCreate(accountId: string) {
-    let entry = friendsStore.get(accountId);
-    if (!entry) {
-      entry = {
-        friends: new SvelteMap(),
-        incoming: new SvelteMap(),
-        outgoing: new SvelteMap(),
-        blocklist: new SvelteMap()
-      };
+// TODO: Use getOrInsert when implemented https://github.com/sveltejs/svelte/issues/18014
+// and remove the export
+export function getOrInsertEntry(accountId: string) {
+  let entry = friendsCache.get(accountId);
+  if (!entry) {
+    entry = {
+      friends: new SvelteMap(),
+      incoming: new SvelteMap(),
+      outgoing: new SvelteMap(),
+      blocklist: new SvelteMap()
+    };
 
-      friendsStore.set(accountId, entry);
-    }
-
-    return entry;
+    friendsCache.set(accountId, entry);
   }
 
-  static replace<K extends FriendsCollectionKey, T extends { accountId: string }>(
-    accountId: string,
-    key: K,
-    data: T[]
-  ) {
-    const entry = FriendsStore.getOrCreate(accountId);
-    const map = entry[key];
+  return entry;
+}
 
-    map.clear();
-    for (const item of data) {
-      // @ts-expect-error – TS can't infer map value from generic
-      map.set(item.accountId, item);
-    }
-  }
+function replaceCollection<K extends FriendsCollectionKey, T extends { accountId: string }>(
+  accountId: string,
+  key: K,
+  data: T[]
+) {
+  const entry = getOrInsertEntry(accountId);
+  const map = entry[key];
 
-  static set<K extends FriendsCollectionKey>(
-    accountId: string,
-    collection: K,
-    friendId: string,
-    data: FriendsEntry[K] extends SvelteMap<string, infer V> ? V : never
-  ) {
-    const entry = FriendsStore.getOrCreate(accountId);
-    const map = entry[collection] as SvelteMap<string, unknown>;
-    map.set(friendId, data);
+  map.clear();
+  for (const item of data) {
+    // @ts-expect-error - this is fine
+    map.set(item.accountId, item);
   }
+}
 
-  static delete(accountId: string, collection: FriendsCollectionKey, friendId: string) {
-    const entry = FriendsStore.getOrCreate(accountId);
-    entry[collection].delete(friendId);
-  }
+function setCollectionItem<K extends FriendsCollectionKey>(
+  accountId: string,
+  collection: K,
+  friendId: string,
+  data: AccountFriends[K] extends SvelteMap<string, infer V> ? V : never
+) {
+  const entry = getOrInsertEntry(accountId);
+  const map = entry[collection] as SvelteMap<string, unknown>;
+  map.set(friendId, data);
+}
+
+export function deleteCollectionItem(accountId: string, collection: FriendsCollectionKey, friendId: string) {
+  const entry = getOrInsertEntry(accountId);
+  entry[collection].delete(friendId);
 }

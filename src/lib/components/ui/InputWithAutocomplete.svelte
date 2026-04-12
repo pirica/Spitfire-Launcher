@@ -4,7 +4,7 @@
   import { debounce } from '$lib/debounce';
   import { Lookup } from '$lib/modules/lookup';
   import { accountStore } from '$lib/storage';
-  import { avatarCache, displayNamesCache } from '$lib/stores';
+  import { avatarCache, displayNameCache } from '$lib/stores';
 
   const activeAccount = accountStore.getActiveStore(true);
 
@@ -22,7 +22,7 @@
   const autocompleteData = $derived.by(() => {
     if (!value) return [];
 
-    return displayNamesCache
+    return displayNameCache
       .entries()
       .filter(([id, name]) => name?.toLowerCase().includes(value.toLowerCase()) || id === value)
       .toArray()

@@ -10,15 +10,15 @@
   import { DownloadManager } from '$lib/modules/download.svelte';
   import { Legendary } from '$lib/modules/legendary';
   import { accountStore, downloaderStore } from '$lib/storage';
-  import { ownedApps } from '$lib/stores';
+  import { ownedAppsCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
   import type { AppFilterValue } from '$types/legendary';
   import Fuse from 'fuse.js';
   import { onMount } from 'svelte';
   import { toast } from 'svelte-sonner';
 
-  // ownedApps is set in autoUpdateApps in +layout.svelte
-  const isRefreshing = $derived(!$ownedApps?.length);
+  // ownedAppsCache is set in autoUpdateApps in +layout.svelte
+  const isRefreshing = $derived(!$ownedAppsCache?.length);
   let searchQuery = $state<string>('');
   let filters = $state<AppFilterValue[]>([]);
 
@@ -28,7 +28,7 @@
   const filteredApps = $derived.by(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    let filtered = Object.values($ownedApps).filter((app) => {
+    let filtered = Object.values($ownedAppsCache).filter((app) => {
       if (!filters.includes('hidden') && $downloaderStore.hiddenApps?.includes(app.id)) return false;
       if (filters.includes('installed') && !app.installed) return false;
       if (filters.includes('updatesAvailable') && !app.hasUpdate) return false;
@@ -88,7 +88,7 @@
   onkeydown={(event) => {
     if (event.key === 'F5') {
       event.preventDefault();
-      ownedApps.set([]);
+      ownedAppsCache.set([]);
       Legendary.cacheApps();
     }
   }}

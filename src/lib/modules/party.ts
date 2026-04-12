@@ -3,7 +3,7 @@ import defaultPartyMeta from '$lib/data/default-party-meta.json';
 import { EpicAPIError } from '$lib/exceptions/EpicAPIError';
 import { AuthSession } from '$lib/modules/auth-session';
 import { partyService } from '$lib/http';
-import { accountPartiesStore, avatarCache, displayNamesCache } from '$lib/stores';
+import { partyCache, avatarCache, displayNameCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
 import type { FetchPartyResponse, InviterPartyResponse } from '$types/game/party';
 
@@ -15,12 +15,12 @@ export class Party {
 
     const partyData = data.current[0];
     if (partyData) {
-      accountPartiesStore.set(account.accountId, partyData);
+      partyCache.set(account.accountId, partyData);
 
       for (const member of partyData.members) {
         const name = member.meta['urn:epic:member:dn_s'] || member.connections?.[0]?.meta?.['account_pl_dn'];
         if (name) {
-          displayNamesCache.set(member.account_id, name);
+          displayNameCache.set(member.account_id, name);
         }
 
         const loadoutJ = member.meta['Default:AthenaCosmeticLoadout_j'];

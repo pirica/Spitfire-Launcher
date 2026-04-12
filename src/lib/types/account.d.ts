@@ -9,9 +9,3 @@ export type BulkState<T> = {
   displayName: string;
   data: T;
 };
-
-export type AccountCacheData = Partial<{
-  vbucks: number;
-  friends: { displayName: string; accountId: string }[];
-  remainingGifts: number;
-}>;

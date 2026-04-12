@@ -5,7 +5,7 @@
   import { DownloadManager } from '$lib/modules/download.svelte.js';
   import { Legendary } from '$lib/modules/legendary';
   import { downloaderStore } from '$lib/storage';
-  import { ownedApps, runningAppIds } from '$lib/stores';
+  import { ownedAppsCache, runningAppIds } from '$lib/stores';
   import { Tauri } from '$lib/tauri';
   import { bytesToSize, handleError, sleep } from '$lib/utils';
   import CircleMinusIcon from '@lucide/svelte/icons/circle-minus';
@@ -30,7 +30,7 @@
   // eslint-disable-next-line no-useless-assignment
   let { appId, installDialogAppId = $bindable(), uninstallDialogAppId = $bindable() }: Props = $props();
 
-  const app = $derived($ownedApps.find((x) => x.id === appId)!);
+  const app = $derived($ownedAppsCache.find((x) => x.id === appId)!);
   const isInstalling = $derived(DownloadManager.downloadingAppId === app.id);
   const isFavorited = $derived($downloaderStore.favoriteApps?.includes(app.id) ?? false);
   const isHidden = $derived($downloaderStore.hiddenApps?.includes(app.id) ?? false);

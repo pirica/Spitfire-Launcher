@@ -4,7 +4,7 @@ import { Legendary, configPath } from '$lib/modules/legendary';
 import { Notification } from '$lib/modules/notification';
 import type { queueItemSchema } from '$lib/schemas/settings';
 import { downloaderStore } from '$lib/storage';
-import { ownedApps } from '$lib/stores';
+import { ownedAppsCache } from '$lib/stores';
 import { type LegendaryStreamEvent, Tauri } from '$lib/tauri';
 import type { ParsedApp } from '$types/legendary';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
@@ -200,7 +200,7 @@ class DownloadManagerC {
               });
             }
 
-            ownedApps.update((apps) => {
+            ownedAppsCache.update((apps) => {
               const appIndex = apps.findIndex((x) => x.id === app.id);
               if (appIndex !== -1) {
                 apps[appIndex] = app;

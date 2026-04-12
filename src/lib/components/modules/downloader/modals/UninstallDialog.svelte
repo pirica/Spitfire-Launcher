@@ -3,7 +3,7 @@
   import * as Dialog from '$components/ui/dialog';
   import { t } from '$lib/i18n';
   import { Legendary } from '$lib/modules/legendary';
-  import { ownedApps } from '$lib/stores';
+  import { ownedAppsCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
   import { toast } from 'svelte-sonner';
 
@@ -13,7 +13,7 @@
 
   let { id = $bindable() }: Props = $props();
 
-  const app = $derived($ownedApps.find((x) => x.id === id)!);
+  const app = $derived($ownedAppsCache.find((x) => x.id === id)!);
 
   let isOpen = $state(true);
   let isDeleting = $state(false);

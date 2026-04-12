@@ -3,10 +3,10 @@ import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import { EventEmitter } from '$lib/event-emitter';
 import { getChildLogger } from '$lib/logger';
 import { AuthSession } from '$lib/modules/auth-session';
-import { FriendsStore, Friends } from '$lib/modules/friends';
+import { Friends, getOrInsertEntry } from '$lib/modules/friends';
 import { Party } from '$lib/modules/party';
 import { accountStore } from '$lib/storage';
-import { accountPartiesStore } from '$lib/stores';
+import { partyCache, friendsCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
 import type {
   EpicEventFriendRemoved,
@@ -354,7 +354,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
   }
 
   private handleMemberStateUpdated(data: EpicEventMemberStateUpdated) {
-    const parties = accountPartiesStore.entries().filter(([, party]) => party.id === data.party_id);
+    const parties = partyCache.entries().filter(([, party]) => party.id === data.party_id);
     for (const [accountId, party] of parties) {
       const partyMember = party.members.find((member) => member.account_id === data.account_id);
       if (!partyMember) continue;
@@ -378,12 +378,12 @@ export class XMPPManager extends EventEmitter<EventMap> {
         partyMember.meta = { ...partyMember.meta, ...data.member_state_overridden };
       }
 
-      accountPartiesStore.set(accountId, { ...party });
+      partyCache.set(accountId, { ...party });
     }
   }
 
   private handlePartyUpdated(data: EpicEventPartyUpdated) {
-    const parties = accountPartiesStore.entries().filter(([, party]) => party.id === data.party_id);
+    const parties = partyCache.entries().filter(([, party]) => party.id === data.party_id);
     for (const [accountId, party] of parties) {
       party.id = data.party_id;
       party.revision = data.revision;
@@ -417,24 +417,24 @@ export class XMPPManager extends EventEmitter<EventMap> {
         party.meta = { ...party.meta, ...data.party_state_overridden };
       }
 
-      accountPartiesStore.set(accountId, { ...party });
+      partyCache.set(accountId, { ...party });
     }
   }
 
   private handleMemberLeave(data: EpicEventMemberLeft | EpicEventMemberKicked | EpicEventMemberExpired) {
-    accountPartiesStore.delete(data.account_id);
+    partyCache.delete(data.account_id);
 
-    const parties = accountPartiesStore.entries().filter(([, party]) => party.id === data.party_id);
+    const parties = partyCache.entries().filter(([, party]) => party.id === data.party_id);
     for (const [accountId, party] of parties) {
       party.members = party.members.filter((member) => member.account_id !== data.account_id);
       party.revision = data.revision || party.revision;
 
-      accountPartiesStore.set(accountId, { ...party });
+      partyCache.set(accountId, { ...party });
     }
   }
 
   private async handleMemberJoin(data: EpicEventMemberJoined) {
-    const parties = accountPartiesStore.entries().filter(([, party]) => party.id === data.party_id);
+    const parties = partyCache.entries().filter(([, party]) => party.id === data.party_id);
 
     const newMember: PartyMember = {
       account_id: data.account_id,
@@ -455,18 +455,18 @@ export class XMPPManager extends EventEmitter<EventMap> {
       party.revision = data.revision;
       party.updated_at = data.updated_at || party.updated_at;
 
-      accountPartiesStore.set(accountId, { ...party });
+      partyCache.set(accountId, { ...party });
     }
 
     const joiningAccount = accountStore.getAccount(data.account_id);
     if (joiningAccount) {
       const partyData = await Party.get(joiningAccount).catch(() => null);
-      if (!partyData) accountPartiesStore.delete(data.account_id);
+      if (!partyData) partyCache.delete(data.account_id);
     }
   }
 
   private handleMemberNewCaptain(data: EpicEventMemberNewCaptain) {
-    const parties = accountPartiesStore.entries().filter(([, party]) => party.id === data.party_id);
+    const parties = partyCache.entries().filter(([, party]) => party.id === data.party_id);
     for (const [accountId, party] of parties) {
       party.members = party.members.map((member) => ({
         ...member,
@@ -474,13 +474,12 @@ export class XMPPManager extends EventEmitter<EventMap> {
       }));
 
       party.revision = data.revision || party.revision;
-      accountPartiesStore.set(accountId, { ...party });
+      partyCache.set(accountId, { ...party });
     }
   }
 
   private handleFriendRequest(data: EpicEventFriendRequest) {
-    const friends = FriendsStore.getOrCreate(this.account.accountId);
-
+    const friends = getOrInsertEntry(this.account.accountId);
     if (data.status === 'PENDING') {
       if (data.from === this.account.accountId) {
         Friends.cacheAccountNameAndAvatar(this.account, data.to);
@@ -517,7 +516,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
   }
 
   private handleFriendRemoved(data: EpicEventFriendRemoved) {
-    const friends = FriendsStore.getOrCreate(this.account.accountId);
+    const friends = getOrInsertEntry(this.account.accountId);
     const friendId = data.from === this.account.accountId ? data.to : data.from;
 
     friends.friends.delete(friendId);
