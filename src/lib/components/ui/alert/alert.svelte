@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import type { LucideIcon } from '$types';
+  import type { LucideIcon } from '$types/lucide';
 
   export type AlertColor = 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'indigo' | 'purple' | 'pink' | 'gray';
 

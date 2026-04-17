@@ -4,7 +4,7 @@ import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import homebaseRatingMapping from '$lib/data/homebase-rating-mapping.json';
 import { t } from '$lib/i18n';
 import { getChildLogger } from '$lib/logger';
-import { acceptIncomingMulti, addFriend, getIncoming } from '$lib/modules/friends';
+import { acceptIncomingBulk, addFriend, getIncoming } from '$lib/modules/friends';
 import { acceptInvite, getInviterParty, getParty, leaveParty, patchSelf } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { partyCache } from '$lib/stores';
@@ -126,7 +126,7 @@ export class TaxiManager {
         count: incomingRequests.length
       });
 
-      await acceptIncomingMulti(
+      await acceptIncomingBulk(
         this.account,
         incomingRequests.map((x) => x.accountId)
       );

@@ -20,7 +20,7 @@
     isInQueue,
     removeFromQueue
   } from '$lib/modules/download.svelte.js';
-  import { launchLegendaryApp, verifyLegendaryApp } from '$lib/modules/legendary';
+  import { launchApp as launchLegendaryApp, verifyApp } from '$lib/modules/legendary';
   import { downloaderStore } from '$lib/storage';
   import { ownedAppsCache, runningAppIds } from '$lib/stores';
   import { stopApp as stopTrackedApp } from '$lib/tauri';
@@ -111,7 +111,7 @@
     isVerifying = true;
 
     try {
-      const { requiresRepair } = await verifyLegendaryApp(app.id);
+      const { requiresRepair } = await verifyApp(app.id);
       if (!requiresRepair) {
         return toast.success($t('library.app.verified', { name: app.title }));
       }

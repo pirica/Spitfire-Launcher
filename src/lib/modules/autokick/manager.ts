@@ -5,7 +5,7 @@ import { claimRewards } from '$lib/modules/autokick/claim-rewards';
 import { transferBuildingMaterials } from '$lib/modules/autokick/transfer-building-materials';
 import { getFriends } from '$lib/modules/friends';
 import { queryProfile } from '$lib/modules/mcp';
-import { getParty, invite, kickParty, leaveParty } from '$lib/modules/party';
+import { getParty, invite, kickMember, leaveParty } from '$lib/modules/party';
 import { XMPPManager } from '$lib/modules/xmpp';
 import { accountStore, settingsStore } from '$lib/storage';
 import { partyCache } from '$lib/stores';
@@ -264,7 +264,7 @@ export class AutoKickManager {
 
     if (leaderAccount) {
       await Promise.allSettled(
-        noAutoKickIds.filter((id) => id !== this.account.accountId).map((id) => kickParty(leaderAccount, party.id, id))
+        noAutoKickIds.filter((id) => id !== this.account.accountId).map((id) => kickMember(leaderAccount, party.id, id))
       );
 
       return leaveParty(this.account, party.id);

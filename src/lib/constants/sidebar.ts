@@ -1,4 +1,3 @@
-import type { LucideIcon } from '$types';
 import BellIcon from '@lucide/svelte/icons/bell';
 import CarIcon from '@lucide/svelte/icons/car';
 import CodeIcon from '@lucide/svelte/icons/code';
@@ -21,6 +20,7 @@ import UserXIcon from '@lucide/svelte/icons/user-x';
 import UsersIcon from '@lucide/svelte/icons/users';
 import WalletIcon from '@lucide/svelte/icons/wallet';
 import { platform } from '@tauri-apps/plugin-os';
+import type { LucideIcon } from '$types/lucide';
 
 type Category = {
   id: string;

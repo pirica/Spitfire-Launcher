@@ -10,10 +10,10 @@
   import AccountCombobox from '$components/ui/AccountCombobox.svelte';
   import { Button, buttonVariants } from '$components/ui/button';
   import * as Dialog from '$components/ui/dialog';
-  import type { SpitfireShopItem } from '$types/game/shop';
+  import type { ShopItem } from '$types/spitfire';
 
   type Props = {
-    item: SpitfireShopItem;
+    item: ShopItem;
     isSendingGifts: boolean;
     open: boolean;
   };

@@ -1,11 +1,11 @@
 import { derived, writable } from 'svelte/store';
-import type { SpitfireShopItem } from '$types/game/shop';
 import type { ParsedApp } from '$types/legendary';
+import type { ShopItem } from '$types/spitfire';
 
 export const ownedItemsCache = writable<Record<string, Set<string>>>({});
 export const ownedAppsCache = writable<ParsedApp[]>([]);
 
-export function createDiscountedStore(accountId: string | undefined, item: SpitfireShopItem) {
+export function createDiscountedStore(accountId: string | undefined, item: ShopItem) {
   return derived(
     ownedItemsCache,
     ($ownedItemsCache) => {
@@ -25,7 +25,7 @@ export function createDiscountedStore(accountId: string | undefined, item: Spitf
   );
 }
 
-export function createIsOwnedStore(accountId: string | undefined, item: SpitfireShopItem) {
+export function createIsOwnedStore(accountId: string | undefined, item: ShopItem) {
   return derived(
     ownedItemsCache,
     ($ownedItemsCache) => {

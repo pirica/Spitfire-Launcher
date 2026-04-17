@@ -1,13 +1,13 @@
-export type SpitfireShopFilter = 'new' | 'leavingSoon' | 'longestWait';
+export type ShopFilter = 'new' | 'leavingSoon' | 'longestWait';
 
-export type SpitfireShop = {
+export type ShopData = {
   lastUpdated: string;
   hash: string;
   image: string;
-  offers: SpitfireShopItem[];
+  offers: ShopItem[];
 };
 
-export type SpitfireShopItem = {
+export type ShopItem = {
   id: string;
   offerId: string;
   devName: string;
@@ -74,8 +74,8 @@ export type SpitfireShopItem = {
   refundable: boolean;
 };
 
-export type SpitfireShopSection = {
+export type ShopSection = {
   name: string;
   id: string;
-  items: SpitfireShopItem[];
+  items: ShopItem[];
 };

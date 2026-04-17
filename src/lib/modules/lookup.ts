@@ -6,13 +6,13 @@ import { processChunks } from '$lib/utils';
 import type { AccountData } from '$types/account';
 import type { EpicAccountById, EpicAccountByName, EpicAccountSearch } from '$types/game/lookup';
 
-export async function fetchUserById(account: AccountData, accountId: string) {
+export async function fetchUserById(account: AccountData, accountId: string): Promise<EpicAccountById> {
   const data = await getAuthedKy(account, publicAccountService).get<EpicAccountById>(accountId).json();
   displayNameCache.set(data.id, data.displayName);
   return data;
 }
 
-export async function fetchUsersByIds(account: AccountData, accountIds: string[]) {
+export async function fetchUsersByIds(account: AccountData, accountIds: string[]): Promise<EpicAccountById[]> {
   const MAX_IDS_PER_REQUEST = 100;
   const session = getAuthedKy(account, publicAccountService);
 
@@ -30,7 +30,7 @@ export async function fetchUsersByIds(account: AccountData, accountIds: string[]
   return accounts;
 }
 
-export async function fetchUserByName(account: AccountData, displayName: string) {
+export async function fetchUserByName(account: AccountData, displayName: string): Promise<EpicAccountByName> {
   const data = await getAuthedKy(account, publicAccountService)
     .get<EpicAccountByName>(`displayName/${displayName.trim()}`)
     .json();
@@ -39,7 +39,7 @@ export async function fetchUserByName(account: AccountData, displayName: string)
   return data;
 }
 
-export async function searchUsersByName(account: AccountData, namePrefix: string) {
+export async function searchUsersByName(account: AccountData, namePrefix: string): Promise<EpicAccountSearch[]> {
   const data = await getAuthedKy(account, userSearchService)
     .get<EpicAccountSearch[]>(`${account.accountId}?prefix=${namePrefix.trim()}&platform=epic`)
     .json();
@@ -54,7 +54,10 @@ export async function searchUsersByName(account: AccountData, namePrefix: string
   return data;
 }
 
-export async function fetchUserByNameOrId(account: AccountData, nameOrId: string) {
+export async function fetchUserByNameOrId(
+  account: AccountData,
+  nameOrId: string
+): Promise<{ accountId: string; displayName: string }> {
   const isAccountId = nameOrId.length === 32;
   if (isAccountId) {
     const data = await fetchUserById(account, nameOrId);

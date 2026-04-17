@@ -1,8 +1,8 @@
 <script lang="ts" module>
-  import type { SpitfireShopFilter, SpitfireShopItem } from '$types/game/shop';
+  import type { ShopFilter as ShopFilterType, ShopItem } from '$types/spitfire';
 
   let searchQuery = $state<string>('');
-  let selectedFilters = $state<SpitfireShopFilter[]>([]);
+  let selectedFilters = $state<ShopFilterType[]>([]);
 </script>
 
 <script lang="ts">
@@ -23,7 +23,7 @@
   import ShopSection from '$components/modules/shop/ShopSection.svelte';
   import ShopSectionSkeleton from '$components/modules/shop/skeletons/ShopSectionSkeleton.svelte';
   import { Input } from '$components/ui/input';
-  import type { SpitfireShopSection } from '$types/game/shop';
+  import type { ShopSection as ShopSectionType } from '$types/spitfire';
 
   const activeAccount = accountStore.getActiveStore(true);
 
@@ -35,7 +35,7 @@
   });
 
   let remainingTime = $state(getResetDate().getTime() - Date.now());
-  let shopSections = $state<SpitfireShopSection[] | null>(null);
+  let shopSections = $state<ShopSectionType[] | null>(null);
   let errorOccurred = $state(false);
   let modalOfferId = $state<string>('');
 
@@ -93,8 +93,8 @@
     }
   }
 
-  function groupBySections(offers: SpitfireShopItem[]) {
-    return offers.reduce<SpitfireShopSection[]>((acc, item) => {
+  function groupBySections(offers: ShopItem[]) {
+    return offers.reduce<ShopSectionType[]>((acc, item) => {
       const sectionName = item.section.name || 'Other';
       const section = acc.find((section) => section.name === sectionName);
 

@@ -4,7 +4,9 @@ import { getAuthedKy } from '$lib/modules/auth-session';
 import type { AccountData } from '$types/account';
 import type { EpicDeviceAuthData } from '$types/game/authorizations';
 
-export function createDeviceAuth(account: AccountData | { accountId: string; accessToken: string }) {
+export function createDeviceAuth(
+  account: AccountData | { accountId: string; accessToken: string }
+): Promise<EpicDeviceAuthData> {
   const token = 'accessToken' in account ? account.accessToken : null;
   const service = 'accessToken' in account ? publicAccountService : getAuthedKy(account, publicAccountService);
 
@@ -16,18 +18,18 @@ export function createDeviceAuth(account: AccountData | { accountId: string; acc
     .json();
 }
 
-export function getDeviceAuth(account: AccountData, deviceId: string) {
+export function getDeviceAuth(account: AccountData, deviceId: string): Promise<EpicDeviceAuthData> {
   return getAuthedKy(account, publicAccountService, fortnitePCGameClient)
     .get<EpicDeviceAuthData>(`${account.accountId}/deviceAuth/${deviceId}`)
     .json();
 }
 
-export function getAllDeviceAuths(account: AccountData) {
+export function getAllDeviceAuths(account: AccountData): Promise<EpicDeviceAuthData[]> {
   return getAuthedKy(account, publicAccountService, fortnitePCGameClient)
     .get<EpicDeviceAuthData[]>(`${account.accountId}/deviceAuth`)
     .json();
 }
 
-export function deleteDeviceAuth(account: AccountData, deviceId: string) {
-  return getAuthedKy(account, publicAccountService).delete(`${account.accountId}/deviceAuth/${deviceId}`);
+export async function deleteDeviceAuth(account: AccountData, deviceId: string): Promise<void> {
+  await getAuthedKy(account, publicAccountService).delete(`${account.accountId}/deviceAuth/${deviceId}`);
 }

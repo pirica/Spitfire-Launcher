@@ -4,7 +4,7 @@
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
   import { downloadingAppId } from '$lib/modules/download.svelte.js';
-  import { cacheLegendaryApps, getLegendaryAccount, loginLegendary, logoutLegendary } from '$lib/modules/legendary';
+  import { cacheApps, getLegendaryAccount, loginLegendary, logoutLegendary } from '$lib/modules/legendary';
   import { downloaderSettingsSchema } from '$lib/schemas/settings';
   import { accountStore, downloaderStore } from '$lib/storage';
   import { handleError } from '$lib/utils';
@@ -59,7 +59,7 @@
       if (accountId) {
         const account = accountStore.getAccount(accountId)!;
         await loginLegendary(account);
-        cacheLegendaryApps().catch((error) => {
+        cacheApps().catch((error) => {
           logger.error('Failed to cache apps after switching downloader account', { error });
         });
       }

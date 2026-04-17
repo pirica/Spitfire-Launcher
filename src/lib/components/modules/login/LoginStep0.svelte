@@ -3,10 +3,10 @@
 </script>
 
 <script lang="ts">
-  import type { LucideIcon } from '$types';
   import GlobeIcon from '@lucide/svelte/icons/globe';
   import KeyIcon from '@lucide/svelte/icons/key';
   import { t } from '$lib/i18n';
+  import type { LucideIcon } from '$types/lucide';
 
   type Props = {
     selectLoginMethod: (method: LoginMethod) => void;

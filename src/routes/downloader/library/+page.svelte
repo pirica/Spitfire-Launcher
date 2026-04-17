@@ -4,7 +4,7 @@
   import Fuse from 'fuse.js';
   import { t } from '$lib/i18n';
   import { downloadingAppId, isInQueue } from '$lib/modules/download.svelte';
-  import { cacheLegendaryApps, getLegendaryAccount, loginLegendary } from '$lib/modules/legendary';
+  import { cacheApps, getLegendaryAccount, loginLegendary } from '$lib/modules/legendary';
   import { accountStore, downloaderStore } from '$lib/storage';
   import { ownedAppsCache } from '$lib/stores';
   import { handleError } from '$lib/utils';
@@ -74,7 +74,7 @@
 
       try {
         await loginLegendary(accountStore.getActive()!);
-        await cacheLegendaryApps();
+        await cacheApps();
         toast.success($t('library.loggedIn'), { id: toastId, duration: 3000 });
       } catch (error) {
         handleError({ error, message: $t('library.failedToLogin'), toastId });
@@ -89,7 +89,7 @@
     if (event.key === 'F5') {
       event.preventDefault();
       ownedAppsCache.set([]);
-      cacheLegendaryApps();
+      cacheApps();
     }
   }}
 />

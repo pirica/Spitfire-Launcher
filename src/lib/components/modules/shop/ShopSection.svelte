@@ -1,9 +1,9 @@
 <script lang="ts">
   import ShopItemCard from '$components/modules/shop/ShopItemCard.svelte';
-  import type { SpitfireShopSection } from '$types/game/shop';
+  import type { ShopSection } from '$types/spitfire';
 
   type ShopSectionProps = {
-    section: SpitfireShopSection;
+    section: ShopSection;
     modalOfferId: string;
   };
 

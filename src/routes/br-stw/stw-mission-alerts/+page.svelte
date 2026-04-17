@@ -16,7 +16,7 @@
   import { Button } from '$components/ui/button';
   import * as Tabs from '$components/ui/tabs';
   import type { RarityType } from '$types/game/stw/resources';
-  import type { WorldParsedMission } from '$types/game/stw/world-info';
+  import type { ParsedWorldMission } from '$types/game/stw/world-info';
 
   const activeAccount = accountStore.getActiveStore(true);
 
@@ -25,18 +25,18 @@
   const filteredMissions = $derived.by(() => {
     if (!$worldInfoCache?.size) return null;
 
-    const stonewood: WorldParsedMission[] = [];
-    const plankerton: WorldParsedMission[] = [];
-    const cannyValley: WorldParsedMission[] = [];
-    const twinePeaks: WorldParsedMission[] = [];
-    const ventures: WorldParsedMission[] = [];
+    const stonewood: ParsedWorldMission[] = [];
+    const plankerton: ParsedWorldMission[] = [];
+    const cannyValley: ParsedWorldMission[] = [];
+    const twinePeaks: ParsedWorldMission[] = [];
+    const ventures: ParsedWorldMission[] = [];
 
-    const vbucks: WorldParsedMission[] = [];
-    const survivors: WorldParsedMission[] = [];
-    const twinePeaks160: WorldParsedMission[] = [];
-    const ventures140: WorldParsedMission[] = [];
-    const upgradeLlamaTokens: WorldParsedMission[] = [];
-    const perkUp: WorldParsedMission[] = [];
+    const vbucks: ParsedWorldMission[] = [];
+    const survivors: ParsedWorldMission[] = [];
+    const twinePeaks160: ParsedWorldMission[] = [];
+    const ventures140: ParsedWorldMission[] = [];
+    const upgradeLlamaTokens: ParsedWorldMission[] = [];
+    const perkUp: ParsedWorldMission[] = [];
 
     let totalVbucks = 0;
     let totalSurvivors = 0;
@@ -58,7 +58,7 @@
         if (!matchesRarityFilter(allRewards, f.rarities)) continue;
         if (!matchesRewardFilter(allRewards, f.rewards)) continue;
 
-        const collectById = (id: string, list: WorldParsedMission[], add: (q: number) => void) => {
+        const collectById = (id: string, list: ParsedWorldMission[], add: (q: number) => void) => {
           const alertMatch = alertRewards.find((x) => x.itemId.includes(id));
           if (alertMatch || mission.rewards.some((x) => x.itemId.includes(id))) {
             if (alertMatch) add(alertMatch.quantity);
@@ -116,7 +116,7 @@
     };
   });
 
-  function sortMissions(arr: WorldParsedMission[]) {
+  function sortMissions(arr: ParsedWorldMission[]) {
     const order: Record<string, number> = {
       [Theaters.Stonewood]: 4,
       [Theaters.Plankerton]: 3,

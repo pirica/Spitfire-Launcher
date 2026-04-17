@@ -16,7 +16,7 @@
   import { t } from '$lib/i18n';
   import { logger } from '$lib/logger';
   import { addToQueue, downloadingAppId } from '$lib/modules/download.svelte.js';
-  import { getLegendaryAppInfo, getLegendarySDLList } from '$lib/modules/legendary';
+  import { getAppInfo, getSDL } from '$lib/modules/legendary';
   import { downloaderStore } from '$lib/storage';
   import { ownedAppsCache } from '$lib/stores';
   import { getDiskSpace } from '$lib/tauri';
@@ -72,11 +72,9 @@
 
   onMount(async () => {
     const [appInfo, diskSpace, sdlData] = await Promise.all([
-      appInfoCache.get(app.id)
-        ? Promise.resolve(appInfoCache.get(app.id)!)
-        : getLegendaryAppInfo(app.id).then((x) => x.stdout),
+      appInfoCache.get(app.id) ? Promise.resolve(appInfoCache.get(app.id)!) : getAppInfo(app.id).then((x) => x.stdout),
       getDiskSpace({ dir: downloaderStore.get().downloadPath! }),
-      getLegendarySDLList(app.id).catch(() => null)
+      getSDL(app.id).catch(() => null)
     ]);
 
     sdlList = sdlData;

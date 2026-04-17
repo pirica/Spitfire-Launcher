@@ -102,7 +102,7 @@
 
   function getStatusData(status: ServiceStatus['status'] | StatusPageStatus['status']): {
     text: string;
-    color: `bg-${AlertColor}-500`;
+    color: `bg-${AlertColor}-${number}`;
   } {
     switch (status.toLowerCase()) {
       case 'up':

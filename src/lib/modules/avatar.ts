@@ -5,7 +5,7 @@ import { processChunks } from '$lib/utils';
 import type { AccountData } from '$types/account';
 import type { AvatarData } from '$types/game/avatar';
 
-export async function fetchAvatars(account: AccountData, friendIds: string[]) {
+export async function fetchAvatars(account: AccountData, friendIds: string[]): Promise<AvatarData[]> {
   const session = getAuthedKy(account, avatarService);
   const MAX_IDS_PER_REQUEST = 100;
 

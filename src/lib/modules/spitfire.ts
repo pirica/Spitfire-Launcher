@@ -1,6 +1,6 @@
 import { spitfireService } from '$lib/http';
-import type { SpitfireShop } from '$types/game/shop';
+import type { ShopData } from '$types/spitfire';
 
-export function fetchShop() {
-  return spitfireService.get<SpitfireShop>('epic/shop').json();
+export function fetchShop(): Promise<ShopData> {
+  return spitfireService.get<ShopData>('epic/shop').json();
 }

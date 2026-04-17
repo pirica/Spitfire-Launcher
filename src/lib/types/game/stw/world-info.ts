@@ -94,7 +94,7 @@ type Tile = {
   yCoordinate: number;
 };
 
-export type WorldParsedMission = {
+export type ParsedWorldMission = {
   theaterId: string;
   guid: string;
   generator: string;
@@ -133,4 +133,4 @@ export type WorldParsedMission = {
   } | null;
 };
 
-export type ParsedWorldInfo = Map<(typeof Theaters)[keyof typeof Theaters], Map<string, WorldParsedMission>>;
+export type ParsedWorldInfo = Map<(typeof Theaters)[keyof typeof Theaters], Map<string, ParsedWorldMission>>;

@@ -6,7 +6,7 @@ import { ConnectionEvents, EpicEvents } from '$lib/constants/events';
 import { EventEmitter } from '$lib/event-emitter';
 import { getChildLogger } from '$lib/logger';
 import { getCachedToken } from '$lib/modules/auth-session';
-import { cacheAccountNameAndAvatar, getOrInsertEntry } from '$lib/modules/friends';
+import { cacheNameAndAvatar, getOrInsertEntry } from '$lib/modules/friends';
 import { getParty } from '$lib/modules/party';
 import { accountStore } from '$lib/storage';
 import { partyCache } from '$lib/stores';
@@ -483,7 +483,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
     const friends = getOrInsertEntry(this.account.accountId);
     if (data.status === 'PENDING') {
       if (data.from === this.account.accountId) {
-        cacheAccountNameAndAvatar(this.account, data.to);
+        cacheNameAndAvatar(this.account, data.to);
         friends.outgoing.set(data.to, {
           accountId: data.to,
           mutual: 0,
@@ -491,7 +491,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
           created: data.timestamp
         });
       } else {
-        cacheAccountNameAndAvatar(this.account, data.from);
+        cacheNameAndAvatar(this.account, data.from);
         friends.incoming.set(data.from, {
           accountId: data.from,
           mutual: 0,
@@ -502,7 +502,7 @@ export class XMPPManager extends EventEmitter<EventMap> {
     } else if (data.status === 'ACCEPTED') {
       const friendId = data.from === this.account.accountId ? data.to : data.from;
 
-      cacheAccountNameAndAvatar(this.account, friendId);
+      cacheNameAndAvatar(this.account, friendId);
       friends.incoming.delete(friendId);
       friends.outgoing.delete(friendId);
       friends.friends.set(friendId, {

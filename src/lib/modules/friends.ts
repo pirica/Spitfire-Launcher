@@ -18,14 +18,14 @@ import type {
 
 const logger = getChildLogger('FriendsManager');
 
-export async function getFriend(account: AccountData, friendId: string) {
+export async function getFriend(account: AccountData, friendId: string): Promise<FriendData> {
   try {
     const friendData = await getAuthedKy(account, friendService)
       .get<FriendData>(`${account.accountId}/friends/${friendId}`)
       .json();
 
     setCollectionItem(account.accountId, 'friends', friendId, friendData);
-    cacheAccountNameAndAvatar(account, friendId);
+    cacheNameAndAvatar(account, friendId);
 
     return friendData;
   } catch (error) {
@@ -37,9 +37,10 @@ export async function getFriend(account: AccountData, friendId: string) {
   }
 }
 
-export async function addFriend(account: AccountData, friendId: string) {
+export async function addFriend(account: AccountData, friendId: string): Promise<void> {
   try {
-    const data = await getAuthedKy(account, friendService).post(`${account.accountId}/friends/${friendId}`).json();
+    await getAuthedKy(account, friendService).post(`${account.accountId}/friends/${friendId}`);
+
     const incomingRequest = friendsCache.get(account.accountId)?.incoming.get(friendId);
     if (incomingRequest) {
       deleteCollectionItem(account.accountId, 'incoming', friendId);
@@ -60,8 +61,7 @@ export async function addFriend(account: AccountData, friendId: string) {
       });
     }
 
-    cacheAccountNameAndAvatar(account, friendId);
-    return data;
+    cacheNameAndAvatar(account, friendId);
   } catch (error) {
     if (error instanceof EpicAPIError) {
       if (error.errorCode === 'errors.com.epicgames.friends.duplicate_friendship') {
@@ -95,16 +95,15 @@ export async function addFriend(account: AccountData, friendId: string) {
   }
 }
 
-export async function removeFriend(account: AccountData, friendId: string) {
+export async function removeFriend(account: AccountData, friendId: string): Promise<void> {
   try {
-    const data = await getAuthedKy(account, friendService).delete(`${account.accountId}/friends/${friendId}`);
+    await getAuthedKy(account, friendService).delete(`${account.accountId}/friends/${friendId}`);
 
     deleteCollectionItem(account.accountId, 'friends', friendId);
     deleteCollectionItem(account.accountId, 'incoming', friendId);
     deleteCollectionItem(account.accountId, 'outgoing', friendId);
 
-    cacheAccountNameAndAvatar(account, friendId);
-    return data;
+    cacheNameAndAvatar(account, friendId);
   } catch (error) {
     if (error instanceof EpicAPIError && error.errorCode === 'errors.com.epicgames.friends.friendship_not_found') {
       deleteCollectionItem(account.accountId, 'friends', friendId);
@@ -116,13 +115,12 @@ export async function removeFriend(account: AccountData, friendId: string) {
   }
 }
 
-export async function removeAllFriends(account: AccountData) {
-  const data = await getAuthedKy(account, friendService).delete(`${account.accountId}/friends`);
+export async function removeAllFriends(account: AccountData): Promise<void> {
+  await getAuthedKy(account, friendService).delete(`${account.accountId}/friends`);
   getOrInsertEntry(account.accountId).friends.clear();
-  return data;
 }
 
-export async function getFriendsSummary(account: AccountData) {
+export async function getFriendsSummary(account: AccountData): Promise<FriendsSummary> {
   const data = await getAuthedKy(account, friendService).get<FriendsSummary>(`${account.accountId}/summary`).json();
 
   const allAccountIds = [
@@ -144,13 +142,13 @@ export async function getFriendsSummary(account: AccountData) {
   return data;
 }
 
-export async function getFriends(account: AccountData) {
+export async function getFriends(account: AccountData): Promise<FriendData[]> {
   const data = await getAuthedKy(account, friendService).get<FriendData[]>(`${account.accountId}/friends`).json();
   replaceCollection(account.accountId, 'friends', data);
   return data;
 }
 
-export async function getIncoming(account: AccountData) {
+export async function getIncoming(account: AccountData): Promise<IncomingFriendRequestData[]> {
   const data = await getAuthedKy(account, friendService)
     .get<IncomingFriendRequestData[]>(`${account.accountId}/incoming`)
     .json();
@@ -159,7 +157,7 @@ export async function getIncoming(account: AccountData) {
   return data;
 }
 
-export async function getOutgoing(account: AccountData) {
+export async function getOutgoing(account: AccountData): Promise<OutgoingFriendRequestData[]> {
   const data = await getAuthedKy(account, friendService)
     .get<OutgoingFriendRequestData[]>(`${account.accountId}/outgoing`)
     .json();
@@ -168,16 +166,17 @@ export async function getOutgoing(account: AccountData) {
   return data;
 }
 
-export async function getBlocklist(account: AccountData) {
+export async function getBlocklist(account: AccountData): Promise<BlockedAccountData[]> {
   const data = await getAuthedKy(account, friendService)
     .get<BlockedAccountData[]>(`${account.accountId}/blocklist`)
     .json();
+
   replaceCollection(account.accountId, 'blocklist', data);
   return data;
 }
 
-export async function block(account: AccountData, friendId: string) {
-  const data = await getAuthedKy(account, friendService).post(`${account.accountId}/blocklist/${friendId}`).json();
+export async function block(account: AccountData, friendId: string): Promise<void> {
+  await getAuthedKy(account, friendService).post(`${account.accountId}/blocklist/${friendId}`);
 
   deleteCollectionItem(account.accountId, 'incoming', friendId);
   deleteCollectionItem(account.accountId, 'outgoing', friendId);
@@ -187,19 +186,18 @@ export async function block(account: AccountData, friendId: string) {
     created: new Date().toISOString()
   });
 
-  cacheAccountNameAndAvatar(account, friendId);
-  return data;
+  cacheNameAndAvatar(account, friendId);
 }
 
-export async function unblock(account: AccountData, friendId: string) {
-  const data = await getAuthedKy(account, friendService).delete(`${account.accountId}/blocklist/${friendId}`);
+export async function unblock(account: AccountData, friendId: string): Promise<void> {
+  await getAuthedKy(account, friendService).delete(`${account.accountId}/blocklist/${friendId}`);
+
   deleteCollectionItem(account.accountId, 'blocklist', friendId);
-  cacheAccountNameAndAvatar(account, friendId);
-  return data;
+  cacheNameAndAvatar(account, friendId);
 }
 
-export async function changeNickname(account: AccountData, friendId: string, nickname: string) {
-  const data = await getAuthedKy(account, friendService).put(`${account.accountId}/friends/${friendId}/alias`, {
+export async function changeNickname(account: AccountData, friendId: string, nickname: string): Promise<void> {
+  await getAuthedKy(account, friendService).put(`${account.accountId}/friends/${friendId}/alias`, {
     method: 'PUT',
     headers: { 'Content-Type': 'text/plain' },
     body: nickname
@@ -219,19 +217,18 @@ export async function changeNickname(account: AccountData, friendId: string, nic
     alias: nickname
   });
 
-  cacheAccountNameAndAvatar(account, friendId);
-  return data;
+  cacheNameAndAvatar(account, friendId);
 }
 
-export async function acceptIncomingMulti(account: AccountData, accountIds: string[]) {
+export async function acceptIncomingBulk(account: AccountData, ids: string[]): Promise<string[]> {
   const MAX_IDS_PER_REQUEST = 100;
   const session = getAuthedKy(account, friendService);
 
-  const acceptedRequests = await processChunks(accountIds, MAX_IDS_PER_REQUEST, async (ids) =>
+  const accepted = await processChunks(ids, MAX_IDS_PER_REQUEST, async (ids) =>
     session.post<string[]>(`${account.accountId}/incoming/accept?targetIds=${ids.join(',')}`, { json: {} }).json()
   );
 
-  for (const friendId of acceptedRequests) {
+  for (const friendId of accepted) {
     deleteCollectionItem(account.accountId, 'incoming', friendId);
     setCollectionItem(account.accountId, 'friends', friendId, {
       accountId: friendId,
@@ -243,10 +240,10 @@ export async function acceptIncomingMulti(account: AccountData, accountIds: stri
     });
   }
 
-  return acceptedRequests;
+  return accepted;
 }
 
-export function cacheAccountNameAndAvatar(account: AccountData, accountId: string) {
+export function cacheNameAndAvatar(account: AccountData, accountId: string) {
   if (!displayNameCache.get(accountId)) {
     fetchUserById(account, accountId).catch((error) => {
       logger.error('Failed to fetch account display name for caching', { accountId, error });

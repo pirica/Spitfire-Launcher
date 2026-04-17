@@ -7,7 +7,7 @@ import { avatarCache, displayNameCache, partyCache } from '$lib/stores';
 import type { AccountData } from '$types/account';
 import type { FetchPartyResponse, InviterPartyResponse } from '$types/game/party';
 
-export async function getParty(account: AccountData) {
+export async function getParty(account: AccountData): Promise<FetchPartyResponse> {
   const data = await getAuthedKy(account, partyService).get<FetchPartyResponse>(`user/${account.accountId}`).json();
 
   const partyData = data.current[0];
@@ -37,19 +37,24 @@ export async function getParty(account: AccountData) {
   return data;
 }
 
-export function kickParty(account: AccountData, partyId: string, accountToKick: string) {
-  return getAuthedKy(account, partyService).delete(`parties/${partyId}/members/${accountToKick}`).json();
+export async function kickMember(account: AccountData, partyId: string, memberId: string): Promise<void> {
+  await getAuthedKy(account, partyService).delete(`parties/${partyId}/members/${memberId}`);
 }
 
-export function leaveParty(account: AccountData, partyId: string) {
-  return kickParty(account, partyId, account.accountId);
+export async function leaveParty(account: AccountData, partyId: string): Promise<void> {
+  await kickMember(account, partyId, account.accountId);
 }
 
-export function promote(account: AccountData, partyId: string, accountToPromote: string) {
-  return getAuthedKy(account, partyService).post(`parties/${partyId}/members/${accountToPromote}/promote`).json();
+export async function promote(account: AccountData, partyId: string, accountToPromote: string): Promise<void> {
+  await getAuthedKy(account, partyService).post(`parties/${partyId}/members/${accountToPromote}/promote`);
 }
 
-export function patchParty(account: AccountData, partyId: string, revision: number, update: Record<string, string>) {
+export async function patchParty(
+  account: AccountData,
+  partyId: string,
+  revision: number,
+  update: Record<string, string>
+): Promise<void> {
   const body = {
     revision,
     meta: {
@@ -58,29 +63,32 @@ export function patchParty(account: AccountData, partyId: string, revision: numb
     }
   };
 
-  return patchWithRetry(account, `parties/${partyId}`, body);
+  await patchWithRetry(account, `parties/${partyId}`, body);
 }
 
-export function patchSelf(account: AccountData, partyId: string, revision: number, update: Record<string, string>) {
+export async function patchSelf(
+  account: AccountData,
+  partyId: string,
+  revision: number,
+  update: Record<string, string>
+): Promise<void> {
   const body = {
     revision,
     deleted: [],
     update: { ...defaultPartyMemberMeta, ...update }
   };
 
-  return patchWithRetry(account, `parties/${partyId}/members/${account.accountId}/meta`, body);
+  await patchWithRetry(account, `parties/${partyId}/members/${account.accountId}/meta`, body);
 }
 
-async function patchWithRetry(account: AccountData, url: string, body: Record<string, any>) {
+async function patchWithRetry(account: AccountData, url: string, body: Record<string, any>): Promise<void> {
   try {
-    return await getAuthedKy(account, partyService).patch(url, { json: body }).json();
+    await getAuthedKy(account, partyService).patch(url, { json: body });
   } catch (error) {
     if (error instanceof EpicAPIError && error.errorCode === 'errors.com.epicgames.social.party.stale_revision') {
       const newRevision = Number.parseInt(error.messageVars[1]);
       if (!Number.isNaN(newRevision)) {
-        return getAuthedKy(account, partyService)
-          .patch(url, { json: { ...body, revision: newRevision } })
-          .json();
+        await getAuthedKy(account, partyService).patch(url, { json: { ...body, revision: newRevision } });
       }
     }
 
@@ -88,17 +96,15 @@ async function patchWithRetry(account: AccountData, url: string, body: Record<st
   }
 }
 
-export function invite(account: AccountData, partyId: string, friendToInvite: string) {
-  return getAuthedKy(account, partyService)
-    .post(`parties/${partyId}/invites/${friendToInvite}?sendPing=true`, {
-      json: {
-        'urn:epic:invite:platformdata_s': ''
-      }
-    })
-    .json();
+export async function invite(account: AccountData, partyId: string, friendToInvite: string): Promise<void> {
+  await getAuthedKy(account, partyService).post(`parties/${partyId}/invites/${friendToInvite}?sendPing=true`, {
+    json: {
+      'urn:epic:invite:platformdata_s': ''
+    }
+  });
 }
 
-export function getInviterParty(account: AccountData, senderId: string) {
+export function getInviterParty(account: AccountData, senderId: string): Promise<InviterPartyResponse[]> {
   return getAuthedKy(account, partyService)
     .get<InviterPartyResponse[]>(`user/${account.accountId}/pings/${senderId}/parties`)
     .json();
@@ -110,7 +116,7 @@ export async function acceptInvite(
   senderId: string,
   jid: string,
   meta: Record<string, string> = {}
-) {
+): Promise<void> {
   await getAuthedKy(account, partyService)
     .post(`parties/${partyId}/members/${account.accountId}/join`, {
       json: {

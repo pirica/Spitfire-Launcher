@@ -8,10 +8,10 @@
   import { accountDataCache, createDiscountedStore, ownedItemsCache } from '$lib/stores';
   import { Button, buttonVariants } from '$components/ui/button';
   import * as Dialog from '$components/ui/dialog';
-  import type { SpitfireShopItem } from '$types/game/shop';
+  import type { ShopItem } from '$types/spitfire';
 
   type Props = {
-    item: SpitfireShopItem;
+    item: ShopItem;
     isPurchasing: boolean;
     open: boolean;
   };

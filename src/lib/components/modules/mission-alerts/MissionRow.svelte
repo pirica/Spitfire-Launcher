@@ -3,15 +3,15 @@
   import { language } from '$lib/i18n';
   import { accountStore } from '$lib/storage';
   import { claimedAlerts } from '$lib/stores';
-  import type { WorldParsedMission } from '$types/game/stw/world-info';
+  import type { ParsedWorldMission } from '$types/game/stw/world-info';
 
   const activeAccount = accountStore.getActiveStore(true);
 
   type Props = {
-    mission: WorldParsedMission;
+    mission: ParsedWorldMission;
   };
 
-  type Reward = WorldParsedMission['rewards'][number] | NonNullable<WorldParsedMission['alert']>['rewards'][number];
+  type Reward = ParsedWorldMission['rewards'][number] | NonNullable<ParsedWorldMission['alert']>['rewards'][number];
   type Indexable = Record<string, string>;
 
   const { mission }: Props = $props();

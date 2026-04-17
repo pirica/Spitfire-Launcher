@@ -10,14 +10,14 @@ export function composeMCP<T>(
   profile: MCPProfileId,
   data: Record<string, any>,
   route?: MCPRoute
-) {
+): Promise<T> {
   const r = route || (operation === 'QueryPublicProfile' ? 'public' : 'client');
   return getAuthedKy(account, baseGameService)
     .post<T>(`profile/${account.accountId}/${r}/${operation}?profileId=${profile}&rvn=-1`, { json: data })
     .json();
 }
 
-export function queryProfile<T extends MCPProfileId>(account: AccountData, profile: T) {
+export function queryProfile<T extends MCPProfileId>(account: AccountData, profile: T): Promise<FullQueryProfile<T>> {
   return composeMCP<FullQueryProfile<T>>(account, 'QueryProfile', profile, {});
 }
 
@@ -25,7 +25,7 @@ export function queryPublicProfile<T extends Extract<MCPProfileId, 'campaign' | 
   account: AccountData,
   targetAccountId: string,
   profile: T
-) {
+): Promise<FullQueryProfile<T>> {
   return getAuthedKy(account, baseGameService)
     .post<FullQueryProfile<T>>(`profile/${targetAccountId}/public/QueryPublicProfile?profileId=${profile}&rvn=-1`, {
       json: {}
@@ -36,7 +36,7 @@ export function queryPublicProfile<T extends Extract<MCPProfileId, 'campaign' | 
 export function clientQuestLogin<T extends Extract<MCPProfileId, 'athena' | 'campaign'>>(
   account: AccountData,
   profile: T
-) {
+): Promise<FullQueryProfile<T>> {
   return composeMCP<FullQueryProfile<T>>(account, 'ClientQuestLogin', profile, { streamingAppKey: '' });
 }
 

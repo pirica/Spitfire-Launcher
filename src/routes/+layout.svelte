@@ -17,7 +17,7 @@
   import { initAutoKick } from '$lib/modules/autokick/base';
   import { fetchAvatars } from '$lib/modules/avatar';
   import { addToQueue, initDownloader } from '$lib/modules/download.svelte';
-  import { cacheLegendaryApps, getLegendaryAccount, getLegendaryAppInfo } from '$lib/modules/legendary';
+  import { cacheApps, getAppInfo, getLegendaryAccount } from '$lib/modules/legendary';
   import { fetchUsersByIds } from '$lib/modules/lookup';
   import { setWorldInfoCache } from '$lib/modules/world-info';
   import { setLocale } from '$lib/paraglide/runtime';
@@ -83,7 +83,7 @@
     const account = await getLegendaryAccount();
     if (!account) return;
 
-    await cacheLegendaryApps();
+    await cacheApps();
 
     const updatableApps = $ownedAppsCache.filter((app) => app.hasUpdate);
     const appAutoUpdate = $downloaderStore.perAppAutoUpdate || {};
@@ -105,7 +105,7 @@
     const cached = $ownedAppsCache.find((app) => app.id === appId);
     if (cached) return cached.title;
 
-    const appInfo = await getLegendaryAppInfo(appId);
+    const appInfo = await getAppInfo(appId);
     return appInfo.stdout.game.title;
   }
 

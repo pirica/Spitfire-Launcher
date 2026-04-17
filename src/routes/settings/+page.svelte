@@ -1,6 +1,5 @@
 <script lang="ts">
   import type { Component } from 'svelte';
-  import type { LucideIcon } from '$types';
   import CodeXmlIcon from '@lucide/svelte/icons/code-xml';
   import DownloadIcon from '@lucide/svelte/icons/download';
   import SettingsIcon from '@lucide/svelte/icons/settings';
@@ -17,6 +16,7 @@
   import GeneralSettings from '$components/modules/settings/categories/GeneralSettings.svelte';
   import { Separator } from '$components/ui/separator';
   import * as Tabs from '$components/ui/tabs';
+  import type { LucideIcon } from '$types/lucide';
 
   type Category = {
     id: string;

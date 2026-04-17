@@ -36,7 +36,11 @@ function getOrInsertState(account: AccountData, client: ClientCredentials): Auth
   });
 }
 
-export async function getCachedToken(account: AccountData, client: ClientCredentials = defaultClient, force = false) {
+export async function getCachedToken(
+  account: AccountData,
+  client: ClientCredentials = defaultClient,
+  force = false
+): Promise<string> {
   const state = getOrInsertState(account, client);
   if (force) {
     state.accessToken = '';

@@ -31,7 +31,7 @@
   import {
     getParty,
     invite,
-    kickParty,
+    kickMember as kickMemberRequest,
     leaveParty as leavePartyRequest,
     promote as promoteParty
   } from '$lib/modules/party';
@@ -157,7 +157,7 @@
     kickingMemberIds.add(memberId);
 
     try {
-      await kickParty(kicker, partyId, memberId);
+      await kickMemberRequest(kicker, partyId, memberId);
       afterKickActions(memberId);
     } catch (error) {
       handleError({

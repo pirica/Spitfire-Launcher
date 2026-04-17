@@ -12,14 +12,20 @@ import { ingredients, resources, survivors, survivorsMythicLeads, traps } from '
 import { baseGameService } from '$lib/http';
 import { getAccessTokenUsingClientCredentials } from '$lib/modules/authentication';
 import { worldInfoCache } from '$lib/stores';
-import type { ParsedModifierData, ParsedRarityData, ParsedResourceData, RarityType } from '$types/game/stw/resources';
+import type {
+  ParsedModifierData,
+  ParsedRarityData,
+  ParsedResourceData,
+  ParsedZoneData,
+  RarityType
+} from '$types/game/stw/resources';
 import type {
   ParsedWorldInfo,
+  ParsedWorldMission,
   WorldInfoData,
   WorldInfoMission,
   WorldInfoMissionAlert,
-  WorldInfoTheater,
-  WorldParsedMission
+  WorldInfoTheater
 } from '$types/game/stw/world-info';
 
 type Theaters = keyof typeof Theaters;
@@ -59,7 +65,7 @@ export function parseWorldInfo(data: WorldInfoData): ParsedWorldInfo {
 
     const theaterAlerts = data.missionAlerts.find((x) => x.theaterId === theaterId && x.availableMissionAlerts?.length);
 
-    const missions = new Map<string, WorldParsedMission>();
+    const missions = new Map<string, ParsedWorldMission>();
 
     for (const mission of theaterMissions.availableMissions) {
       const region = theater.regions.find((region) => {
@@ -113,7 +119,7 @@ function parseMission(
   mission: WorldInfoMission['availableMissions'][number],
   zone: string,
   alert?: WorldInfoMissionAlert['availableMissionAlerts'][number]
-): WorldParsedMission {
+): ParsedWorldMission {
   const zoneInfo = parseZone(mission.missionGenerator);
   const isGroup =
     theater.uniqueId === Theaters.Stonewood && zoneInfo.id === 'ets'
@@ -200,13 +206,13 @@ function parseModifier(key: string): ParsedModifierData {
   };
 }
 
-function parseZone(generator: string): ParsedModifierData {
+function parseZone(generator: string): ParsedZoneData {
   const entry = Object.entries(ZoneCategories).find(([, patterns]) => patterns.some((p) => generator.includes(p)));
   const key = entry?.[0] as keyof typeof ZoneCategories | undefined;
   const isGroup = generator.toLowerCase().includes('group');
 
   return {
-    id: key ?? null,
+    id: key || undefined,
     imageUrl: key
       ? isGroup && GroupZones.includes(key)
         ? `/world/${key}-group.png`

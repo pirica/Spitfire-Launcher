@@ -9,7 +9,10 @@ import type {
   EpicTokenType
 } from '$types/game/authorizations';
 
-export function getAccessTokenUsingDeviceAuth(deviceAuthData: DeviceAuthData, tokenType: EpicTokenType = 'eg1') {
+export function getAccessTokenUsingDeviceAuth(
+  deviceAuthData: DeviceAuthData,
+  tokenType: EpicTokenType = 'eg1'
+): Promise<EpicDeviceAuthLoginData> {
   return oauthService
     .post<EpicDeviceAuthLoginData>('token', {
       body: new URLSearchParams({
@@ -23,7 +26,9 @@ export function getAccessTokenUsingDeviceAuth(deviceAuthData: DeviceAuthData, to
     .json();
 }
 
-export function getAccessTokenUsingClientCredentials(clientCredentials: ClientCredentials = defaultClient) {
+export function getAccessTokenUsingClientCredentials(
+  clientCredentials: ClientCredentials = defaultClient
+): Promise<EpicOAuthData> {
   return oauthService
     .post<EpicOAuthData>('token', {
       body: new URLSearchParams({
@@ -40,7 +45,7 @@ export function getAccessTokenUsingClientCredentials(clientCredentials: ClientCr
 export function getAccessTokenUsingDeviceCode(
   deviceCode: string,
   clientCredentials: ClientCredentials = defaultClient
-) {
+): Promise<EpicOAuthData> {
   return oauthService
     .post<EpicOAuthData>('token', {
       body: new URLSearchParams({
@@ -55,7 +60,7 @@ export function getAccessTokenUsingDeviceCode(
     .json();
 }
 
-export function getExchangeCodeUsingAccessToken(accessToken: string) {
+export function getExchangeCodeUsingAccessToken(accessToken: string): Promise<EpicExchangeCodeData> {
   return oauthService
     .get<EpicExchangeCodeData>('exchange', {
       headers: {
@@ -69,7 +74,7 @@ export function getAccessTokenUsingExchangeCode(
   exchangeCode: string,
   clientCredentials: ClientCredentials = defaultClient,
   tokenType: EpicTokenType = 'eg1'
-) {
+): Promise<EpicExchangeCodeLoginData> {
   return oauthService
     .post<EpicExchangeCodeLoginData>('token', {
       body: new URLSearchParams({

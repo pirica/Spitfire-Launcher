@@ -1,6 +1,6 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { writable } from 'svelte/store';
-import type { SpitfireShop } from '$types/game/shop';
+import type { ShopData } from '$types/spitfire';
 
 export type AccountDataCache = Partial<{
   vbucks: number;
@@ -8,5 +8,5 @@ export type AccountDataCache = Partial<{
   remainingGifts: number;
 }>;
 
-export const brShopCache = writable<SpitfireShop>();
+export const brShopCache = writable<ShopData>();
 export const accountDataCache = new SvelteMap<string, AccountDataCache>();

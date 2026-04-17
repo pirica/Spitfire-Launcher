@@ -26,7 +26,7 @@ export type EpicManifest = {
 const manifestsDir = 'C:/ProgramData/Epic/EpicGamesLauncher/Data/Manifests';
 let fortniteManifestCache: EpicManifest | null = null;
 
-export async function getFortniteManifest() {
+export async function getFortniteManifest(): Promise<EpicManifest | null> {
   if (fortniteManifestCache) return fortniteManifestCache;
 
   fortniteManifestCache = await getManifestByName('fortnite');

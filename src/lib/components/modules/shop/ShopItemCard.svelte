@@ -4,10 +4,10 @@
   import { language, t } from '$lib/i18n';
   import { accountStore } from '$lib/storage';
   import { createDiscountedStore, createIsOwnedStore } from '$lib/stores';
-  import type { SpitfireShopItem } from '$types/game/shop';
+  import type { ShopItem } from '$types/spitfire';
 
   type ItemCardProps = {
-    item: SpitfireShopItem;
+    item: ShopItem;
     modalOfferId: string;
   };
 

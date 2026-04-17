@@ -38,7 +38,7 @@ export type BaseProfile<T = Record<string, any>> = {
   };
 };
 
-type ProfileItem = {
+export type ProfileItem = {
   templateId: string;
   attributes: {
     [key: string]: any;
@@ -239,7 +239,7 @@ type QueryProfileMapping = {
   common_core: CommonCoreProfile;
 };
 
-export type ProfileFromId<T extends EpicProfileId> = T extends keyof QueryProfileMapping
+export type ProfileFromId<T extends MCPProfileId> = T extends keyof QueryProfileMapping
   ? QueryProfileMapping[T]
   : BaseProfile;
 
