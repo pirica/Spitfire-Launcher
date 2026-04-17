@@ -102,23 +102,23 @@
 
   function getStatusData(status: ServiceStatus['status'] | StatusPageStatus['status']): {
     text: string;
-    color: AlertColor;
+    color: `bg-${AlertColor}-500`;
   } {
     switch (status.toLowerCase()) {
       case 'up':
       case 'operational':
-        return { text: $t('serverStatus.statuses.operational'), color: 'green' };
+        return { text: $t('serverStatus.statuses.operational'), color: 'bg-green-500' };
       case 'down':
       case 'major_outage':
-        return { text: $t('serverStatus.statuses.down'), color: 'red' };
+        return { text: $t('serverStatus.statuses.down'), color: 'bg-red-500' };
       case 'partial_outage':
-        return { text: $t('serverStatus.statuses.partialOutage'), color: 'orange' };
+        return { text: $t('serverStatus.statuses.partialOutage'), color: 'bg-orange-500' };
       case 'under_maintenance':
-        return { text: $t('serverStatus.statuses.underMaintenance'), color: 'blue' };
+        return { text: $t('serverStatus.statuses.underMaintenance'), color: 'bg-blue-500' };
       case 'degraded_performance':
-        return { text: $t('serverStatus.statuses.degradedPerformance'), color: 'yellow' };
+        return { text: $t('serverStatus.statuses.degradedPerformance'), color: 'bg-yellow-500' };
       default:
-        return { text: $t('serverStatus.statuses.unknown'), color: 'gray' };
+        return { text: $t('serverStatus.statuses.unknown'), color: 'bg-gray-500' };
     }
   }
 
@@ -186,7 +186,7 @@
 
   {#if serviceStatus}
     <Alert
-      color={getStatusData(serviceStatus.status).color}
+      color={getStatusData(serviceStatus.status).color.split('-')[1] as AlertColor}
       message={serviceStatus.message}
       title={$t('serverStatus.status', { status: getStatusData(serviceStatus.status).text })}
     />
@@ -246,7 +246,7 @@
         {#each statusPageServices as service (service.name)}
           <div class="flex items-center justify-between rounded-lg bg-card p-4">
             <div class="flex items-center gap-3 truncate">
-              <div class="size-3 rounded-full bg-{getStatusData(service.status).color}-500"></div>
+              <div class="size-3 rounded-full {getStatusData(service.status).color}"></div>
               <span class="truncate font-medium max-xs:text-sm">{service.name}</span>
             </div>
 
